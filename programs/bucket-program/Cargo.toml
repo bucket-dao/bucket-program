@@ -16,4 +16,7 @@ cpi = ["no-entrypoint"]
 default = []
 
 [dependencies]
-anchor-lang = "0.19.0"
+anchor-lang = "0.20.1"
+anchor-spl = "0.20.1"
+crate-token = { version = "0.4.1", features = ["cpi"] }
+crate-redeem-in-kind = { version = "0.4.1", features = ["cpi"] }

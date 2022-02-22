@@ -1,4 +1,4 @@
-const anchor = require('@project-serum/anchor');
+import * as anchor from '@project-serum/anchor';
 
 describe('bucket-program', () => {
 
@@ -8,7 +8,7 @@ describe('bucket-program', () => {
   it('Is initialized!', async () => {
     // Add your test here.
     const program = anchor.workspace.BucketProgram;
-    const tx = await program.rpc.initialize();
+    const tx = await program.rpc.create();
     console.log("Your transaction signature", tx);
   });
 });
