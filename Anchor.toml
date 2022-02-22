@@ -1,0 +1,12 @@
+[programs.localnet]
+bucket_program = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+
+[registry]
+url = "https://anchor.projectserum.com"
+
+[provider]
+cluster = "localnet"
+wallet = "/Users/jacobshiohira/.config/solana/id.json"
+
+[scripts]
+test = "yarn run mocha -t 1000000 tests/"
