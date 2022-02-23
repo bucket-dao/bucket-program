@@ -9,9 +9,9 @@ pub struct Bucket {
     /// Bump.
     pub bump: u8,
     /// Mint of the [crate_token::CrateToken].
-    pub bucket_mint: Pubkey,
+    pub crate_mint: Pubkey,
     /// The [crate_token::CrateToken].
-    pub bucket_token_account: Pubkey,
+    pub crate_token: Pubkey,
     /// Account that has authority over what collateral is allowed.
     pub update_authority: Pubkey,
 }
@@ -20,13 +20,13 @@ impl Bucket {
     pub fn init(
         &mut self,
         bump: u8,
-        bucket_mint: Pubkey,
-        bucket_token_account: Pubkey,
+        crate_mint: Pubkey,
+        crate_token: Pubkey,
         update_authority: Pubkey,
     ) {
         self.bump = bump;
-        self.bucket_mint = bucket_mint;
-        self.bucket_token_account = bucket_token_account;
+        self.crate_mint = crate_mint;
+        self.crate_token = crate_token;
         self.update_authority = update_authority;
     }
 }
