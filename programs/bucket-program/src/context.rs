@@ -67,6 +67,7 @@ pub struct AuthorizeCollateral<'info> {
     // pub mint: Account<'info, Mint>,
     /// Information about the [Bucket].
     #[account(
+        mut,
         seeds = [
             b"bucket".as_ref(),
             crate_token.key().to_bytes().as_ref()

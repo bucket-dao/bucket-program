@@ -56,6 +56,32 @@ export type BucketProgram = {
           "type": "u8"
         }
       ]
+    },
+    {
+      "name": "authorizeCollateral",
+      "accounts": [
+        {
+          "name": "bucket",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "crateToken",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        }
+      ],
+      "args": [
+        {
+          "name": "mint",
+          "type": "publicKey"
+        }
+      ]
     }
   ],
   "accounts": [
@@ -93,16 +119,22 @@ export type BucketProgram = {
             "type": "u8"
           },
           {
-            "name": "bucketMint",
+            "name": "crateMint",
             "type": "publicKey"
           },
           {
-            "name": "bucketTokenAccount",
+            "name": "crateToken",
             "type": "publicKey"
           },
           {
-            "name": "updateAuthority",
+            "name": "authority",
             "type": "publicKey"
+          },
+          {
+            "name": "whitelist",
+            "type": {
+              "vec": "publicKey"
+            }
           }
         ]
       }
@@ -168,6 +200,32 @@ export const IDL: BucketProgram = {
           "type": "u8"
         }
       ]
+    },
+    {
+      "name": "authorizeCollateral",
+      "accounts": [
+        {
+          "name": "bucket",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "crateToken",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        }
+      ],
+      "args": [
+        {
+          "name": "mint",
+          "type": "publicKey"
+        }
+      ]
     }
   ],
   "accounts": [
@@ -205,16 +263,22 @@ export const IDL: BucketProgram = {
             "type": "u8"
           },
           {
-            "name": "bucketMint",
+            "name": "crateMint",
             "type": "publicKey"
           },
           {
-            "name": "bucketTokenAccount",
+            "name": "crateToken",
             "type": "publicKey"
           },
           {
-            "name": "updateAuthority",
+            "name": "authority",
             "type": "publicKey"
+          },
+          {
+            "name": "whitelist",
+            "type": {
+              "vec": "publicKey"
+            }
           }
         ]
       }
