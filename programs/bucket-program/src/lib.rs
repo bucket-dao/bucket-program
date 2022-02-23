@@ -22,5 +22,11 @@ pub mod bucket_program {
         Ok(())
     }
 
-    // issue, redeem, authorize_collateral
+    pub fn authorize_collateral(ctx: Context<AuthorizeCollateral>, mint: Pubkey) -> ProgramResult {
+        instructions::authorize_collateral::handle(ctx, mint)?;
+
+        Ok(())
+    }
+
+    // deposit (issue), redeem (withdraw / redeem)
 }

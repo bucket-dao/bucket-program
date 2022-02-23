@@ -16,7 +16,8 @@ pub struct CreateBucket<'info> {
             crate_token.key().to_bytes().as_ref()
         ],
         bump,
-        payer = payer
+        payer = payer,
+        space = 1024 // todo: determine space needed for whitelist
     )]
     pub bucket: Account<'info, Bucket>,
 
@@ -58,4 +59,27 @@ pub struct CreateBucket<'info> {
 
     /// Crate token program.
     pub crate_token_program: Program<'info, crate_token::program::CrateToken>,
+}
+
+/// Accounts for [bucket-program::authorize_collateral].
+#[derive(Accounts)]
+pub struct AuthorizeCollateral<'info> {
+    // pub mint: Account<'info, Mint>,
+    /// Information about the [Bucket].
+    #[account(
+        seeds = [
+            b"bucket".as_ref(),
+            crate_token.key().to_bytes().as_ref()
+        ],
+        bump,
+        // constraint = bucket.update_authority.key() == admin.key()
+        has_one = authority
+    )]
+    pub bucket: Account<'info, Bucket>,
+
+    /// CHECK: unsafe account type, required for CPI invocation.
+    pub crate_token: UncheckedAccount<'info>,
+
+    /// Signer
+    pub authority: Signer<'info>,
 }

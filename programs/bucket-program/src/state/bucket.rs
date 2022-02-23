@@ -13,7 +13,9 @@ pub struct Bucket {
     /// The [crate_token::CrateToken].
     pub crate_token: Pubkey,
     /// Account that has authority over what collateral is allowed.
-    pub update_authority: Pubkey,
+    pub authority: Pubkey,
+    /// List storing whitelisted collateral mints
+    pub whitelist: Vec<Pubkey>,
 }
 
 impl Bucket {
@@ -22,11 +24,17 @@ impl Bucket {
         bump: u8,
         crate_mint: Pubkey,
         crate_token: Pubkey,
-        update_authority: Pubkey,
+        authority: Pubkey,
     ) {
         self.bump = bump;
         self.crate_mint = crate_mint;
         self.crate_token = crate_token;
-        self.update_authority = update_authority;
+        self.authority = authority;
+        self.whitelist = Vec::new();
+    }
+
+    // todo: add space constraints
+    pub fn authorize_collateral(&mut self, mint: Pubkey) {
+        self.whitelist.push(mint);
     }
 }
