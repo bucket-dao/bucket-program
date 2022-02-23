@@ -1,7 +1,8 @@
 use {
+    crate::state::addresses::{IssueAuthority, WithdrawAuthority},
+    crate::state::bucket::Bucket,
     anchor_lang::prelude::*,
     anchor_spl::token::{Mint, TokenAccount},
-    crate::state::bucket::Bucket
 };
 
 /// Accounts for [bucket-program::create_bucket].
@@ -29,12 +30,26 @@ pub struct CreateBucket<'info> {
     pub bucket_token_account: Account<'info, TokenAccount>,
 
     /// This account's pubkey is set to `issue_authority`.
-    /// CHECK: This is not dangerous because we don't read or write from this account.
-    pub issue_authority: UncheckedAccount<'info>,
+    #[account(
+        init,
+        seeds = [
+            b"Issue".as_ref()
+        ],
+        bump,
+        payer = payer
+    )]
+    pub issue_authority: Account<'info, IssueAuthority>,
 
     /// This account's pubkey is set to `withdraw_authority`.
-    /// CHECK: This is not dangerous because we don't read or write from this account.
-    pub withdraw_authority: UncheckedAccount<'info>,
+    #[account(
+    init,
+    seeds = [
+        b"Withdraw".as_ref()
+    ],
+    bump,
+    payer = payer
+)]
+    pub withdraw_authority: Account<'info, WithdrawAuthority>,
 
     /// Payer of the bucket initialization. Payer is default admin.
     #[account(mut)]
