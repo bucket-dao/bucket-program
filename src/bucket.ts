@@ -64,17 +64,17 @@ export class BucketClient extends AccountUtils {
         mint: PublicKey,
         programID: PublicKey = this.bucketProgram.programId
     ): Promise<[PublicKey, number]> => {
-        return this.findProgramAddress(programID, ["Bucket", mint]);
+        return this.findProgramAddress(programID, ["bucket", mint]);
     };
 
     generateIssueAuthority = async (programID: PublicKey = this.bucketProgram.programId) => {
-        return this.findProgramAddress(programID, ["Issue"]);
+        return this.findProgramAddress(programID, ["issue"]);
     };
 
     generateWithdrawAuthority = async (
         programID: PublicKey = this.bucketProgram.programId
     ) => {
-        return this.findProgramAddress(programID, ["Withdraw"]);
+        return this.findProgramAddress(programID, ["withdraw"]);
     };
 
     createBucket = async (

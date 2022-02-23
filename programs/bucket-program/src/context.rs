@@ -12,7 +12,7 @@ pub struct CreateBucket<'info> {
     #[account(
         init,
         seeds = [
-            b"Bucket".as_ref(),
+            b"bucket".as_ref(),
             crate_token.key().to_bytes().as_ref()
         ],
         bump,
@@ -31,7 +31,7 @@ pub struct CreateBucket<'info> {
     #[account(
         init,
         seeds = [
-            b"Issue".as_ref()
+            b"issue".as_ref()
         ],
         bump,
         payer = payer
@@ -42,7 +42,7 @@ pub struct CreateBucket<'info> {
     #[account(
         init,
         seeds = [
-            b"Withdraw".as_ref()
+            b"withdraw".as_ref()
         ],
         bump,
         payer = payer
