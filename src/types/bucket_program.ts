@@ -11,23 +11,23 @@ export type BucketProgram = {
           "isSigner": false
         },
         {
-          "name": "bucketMint",
+          "name": "crateMint",
           "isMut": false,
           "isSigner": false
         },
         {
-          "name": "bucketTokenAccount",
+          "name": "crateToken",
           "isMut": true,
           "isSigner": false
         },
         {
           "name": "issueAuthority",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
           "name": "withdrawAuthority",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -59,6 +59,30 @@ export type BucketProgram = {
     }
   ],
   "accounts": [
+    {
+      "name": "issueAuthority",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "withdrawAuthority",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
     {
       "name": "bucket",
       "type": {
@@ -99,23 +123,23 @@ export const IDL: BucketProgram = {
           "isSigner": false
         },
         {
-          "name": "bucketMint",
+          "name": "crateMint",
           "isMut": false,
           "isSigner": false
         },
         {
-          "name": "bucketTokenAccount",
+          "name": "crateToken",
           "isMut": true,
           "isSigner": false
         },
         {
           "name": "issueAuthority",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
           "name": "withdrawAuthority",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -147,6 +171,30 @@ export const IDL: BucketProgram = {
     }
   ],
   "accounts": [
+    {
+      "name": "issueAuthority",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "withdrawAuthority",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
     {
       "name": "bucket",
       "type": {

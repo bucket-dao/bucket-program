@@ -2,19 +2,18 @@ use {
     crate::state::addresses::{IssueAuthority, WithdrawAuthority},
     crate::state::bucket::Bucket,
     anchor_lang::prelude::*,
-    anchor_spl::token::{Mint, TokenAccount},
+    anchor_spl::token::Mint,
 };
 
 /// Accounts for [bucket-program::create_bucket].
 #[derive(Accounts)]
-#[instruction(bump: u8)]
 pub struct CreateBucket<'info> {
     /// Information about the [Bucket].
     #[account(
         init,
         seeds = [
             b"Bucket".as_ref(),
-            bucket_token_account.key().to_bytes().as_ref()
+            crate_token.key().to_bytes().as_ref()
         ],
         bump,
         payer = payer
@@ -22,12 +21,11 @@ pub struct CreateBucket<'info> {
     pub bucket: Account<'info, Bucket>,
 
     /// [Mint] of the [crate_token::CrateToken].
-    pub bucket_mint: Account<'info, Mint>,
+    pub crate_mint: Account<'info, Mint>,
 
-    /// The [crate_token::CrateToken] token account to be created.
-    /// Reference crate_token because CPI into crate_token program.
     #[account(mut)]
-    pub bucket_token_account: Account<'info, TokenAccount>,
+    /// CHECK: unsafe account type, required for CPI invocation.
+    pub crate_token: UncheckedAccount<'info>,
 
     /// This account's pubkey is set to `issue_authority`.
     #[account(
@@ -42,13 +40,13 @@ pub struct CreateBucket<'info> {
 
     /// This account's pubkey is set to `withdraw_authority`.
     #[account(
-    init,
-    seeds = [
-        b"Withdraw".as_ref()
-    ],
-    bump,
-    payer = payer
-)]
+        init,
+        seeds = [
+            b"Withdraw".as_ref()
+        ],
+        bump,
+        payer = payer
+    )]
     pub withdraw_authority: Account<'info, WithdrawAuthority>,
 
     /// Payer of the bucket initialization. Payer is default admin.
