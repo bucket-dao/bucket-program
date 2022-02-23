@@ -12,9 +12,15 @@ declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 pub mod bucket_program {
     use super::*;
 
-    pub fn create_bucket(ctx: Context<CreateBucket>) -> ProgramResult {
-        instructions::create_bucket::handle(ctx)?;
+    pub fn create_bucket(
+        ctx: Context<CreateBucket>,
+        bucket_bump: u8,
+        crate_bump: u8,
+    ) -> ProgramResult {
+        instructions::create_bucket::handle(ctx, bucket_bump, crate_bump)?;
 
         Ok(())
     }
+
+    // issue, redeem, authorize_collateral
 }

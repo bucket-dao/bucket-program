@@ -6,5 +6,27 @@ use anchor_lang::prelude::*;
 #[account]
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct Bucket {
-    // bump
+    /// Bump.
+    pub bump: u8,
+    /// Mint of the [crate_token::CrateToken].
+    pub bucket_mint: Pubkey,
+    /// The [crate_token::CrateToken].
+    pub bucket_token_account: Pubkey,
+    /// Account that has authority over what collateral is allowed.
+    pub update_authority: Pubkey,
+}
+
+impl Bucket {
+    pub fn init(
+        &mut self,
+        bump: u8,
+        bucket_mint: Pubkey,
+        bucket_token_account: Pubkey,
+        update_authority: Pubkey,
+    ) {
+        self.bump = bump;
+        self.bucket_mint = bucket_mint;
+        self.bucket_token_account = bucket_token_account;
+        self.update_authority = update_authority;
+    }
 }

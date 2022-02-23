@@ -1,14 +1,14 @@
 import * as anchor from '@project-serum/anchor';
 
-describe('bucket-program', () => {
+import { BucketClient } from '../src/index';
 
-  // Configure the client to use the local cluster.
-  anchor.setProvider(anchor.Provider.env());
+describe('bucket-program', () => {
+  const _provider = anchor.Provider.env();
+  const client = new BucketClient(
+    _provider.connection, _provider.wallet as any
+  );
 
   it('Is initialized!', async () => {
-    // Add your test here.
-    const program = anchor.workspace.BucketProgram;
-    const tx = await program.rpc.create();
-    console.log("Your transaction signature", tx);
+    client.createBucket();
   });
 });
