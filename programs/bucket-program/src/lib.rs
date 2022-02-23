@@ -1,7 +1,8 @@
 use anchor_lang::prelude::*;
 
-mod instructions;
 mod context;
+mod instructions;
+mod state;
 
 use context::*;
 
