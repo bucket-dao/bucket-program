@@ -1,6 +1,13 @@
 import * as anchor from "@project-serum/anchor";
+import { MintLayout, Token, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import type { PublicKey } from "@solana/web3.js";
-import { Keypair, LAMPORTS_PER_SOL } from "@solana/web3.js";
+import {
+  Keypair,
+  LAMPORTS_PER_SOL,
+  sendAndConfirmTransaction,
+  SystemProgram,
+  Transaction,
+} from "@solana/web3.js";
 import { expect } from "chai";
 
 import { NodeWallet } from "../src/common/node-wallet";
@@ -20,48 +27,112 @@ describe("bucket-program", () => {
 
   let bucketKey: PublicKey;
   let crateKey: PublicKey;
-  let _issueAuthority: PublicKey;
-  let _withdrawAuthority: PublicKey;
+  let issueAuthority: PublicKey;
+  let withdrawAuthority: PublicKey;
   let payer: Keypair;
 
+  let mintKP: Keypair;
+
+  let collateralMint: Keypair;
+
+  // beforeEach does not work — results in address in use? probably w.r.t the issue/withdraw authorities.
   before(async () => {
-    const mintKP = Keypair.generate();
+    mintKP = Keypair.generate();
     payer = await nodeWallet.createFundedWallet(1 * LAMPORTS_PER_SOL);
     const {
       tx: _sig,
       bucket,
       crateToken,
-      issueAuthority,
-      withdrawAuthority,
+      issueAuthority: _issueAuthority,
+      withdrawAuthority: _withdrawAuthority,
     } = await client.createBucket(mintKP, payer);
 
     bucketKey = bucket;
     crateKey = crateToken;
-    _issueAuthority = issueAuthority;
-    _withdrawAuthority = withdrawAuthority;
+    issueAuthority = _issueAuthority;
+    withdrawAuthority = _withdrawAuthority;
   });
 
-  it("Issue tokens", () => {
-    console.log("Issue bucket tokens to a user");
-  });
   it("Redeem tokens", () => {
     console.log("Redeem underlyings in exchange for bucket tokens");
   });
 
   it("Authorize collateral", async () => {
-    const collateral_mint = Keypair.generate();
+    collateralMint = Keypair.generate();
 
     const _tx = await client.authorizeCollateral(
       bucketKey,
       crateKey,
       payer,
-      collateral_mint
+      collateralMint
     );
 
     const bucket = await client.fetchBucket(bucketKey);
     const whitelist = bucket.whitelist as PublicKey[];
-
     expect(whitelist.length === 1);
-    expect(whitelist[0] === collateral_mint.publicKey);
+    expect(whitelist[0] === collateralMint.publicKey);
+  });
+
+  it("Issue tokens", async () => {
+    // fund depositor with sol
+    const depositorKeypair = await nodeWallet.createFundedWallet(
+      1 * LAMPORTS_PER_SOL
+    );
+    const collateralATA = await client.getOrCreateATA(
+      collateralMint.publicKey,
+      depositorKeypair.publicKey,
+      depositorKeypair.publicKey,
+      client.provider.connection
+    );
+    const balance = await client.getBalance(depositorKeypair.publicKey);
+    console.log(balance);
+    const tx = new Transaction()
+      .add(
+        SystemProgram.createAccount({
+          fromPubkey: depositorKeypair.publicKey,
+          newAccountPubkey: collateralMint.publicKey,
+          space: MintLayout.span,
+          lamports: await Token.getMinBalanceRentForExemptMint(
+            client.provider.connection
+          ),
+          programId: TOKEN_PROGRAM_ID,
+        })
+      )
+      .add(
+        Token.createInitMintInstruction(
+          TOKEN_PROGRAM_ID,
+          collateralMint.publicKey,
+          9,
+          depositorKeypair.publicKey, // mintAuthority
+          depositorKeypair.publicKey // freezeAuthority
+        )
+      )
+      .add(collateralATA.instruction)
+      .add(
+        Token.createMintToInstruction(
+          TOKEN_PROGRAM_ID,
+          collateralMint.publicKey,
+          collateralATA.address,
+          depositorKeypair.publicKey,
+          [],
+          1_000_000_000
+        )
+      );
+
+    await sendAndConfirmTransaction(client.provider.connection, tx, [
+      depositorKeypair,
+      collateralMint,
+    ]);
+
+    console.log("crateKey: ", crateKey.toString());
+
+    await client.deposit(
+      mintKP,
+      collateralMint.publicKey,
+      bucketKey,
+      crateKey,
+      issueAuthority,
+      depositorKeypair
+    );
   });
 });

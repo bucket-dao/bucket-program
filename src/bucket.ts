@@ -3,8 +3,8 @@ import {
   generateCrateAddress,
 } from "@crateprotocol/crate-sdk";
 import type { Idl, Wallet } from "@project-serum/anchor";
+import { BN, Program, Provider } from "@project-serum/anchor";
 import * as anchor from "@project-serum/anchor";
-import { Program, Provider } from "@project-serum/anchor";
 import { MintLayout, Token, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import type { Connection, Keypair, PublicKey } from "@solana/web3.js";
 import { SystemProgram } from "@solana/web3.js";
@@ -98,8 +98,8 @@ export class BucketClient extends AccountUtils {
   ) => {
     const [crateKey, crateBump] = await generateCrateAddress(mint.publicKey);
     const [bucketKey, bucketBump] = await this.generateBucketAddress(crateKey);
-    const [issueAuthority, _issueBump] = await this.generateIssueAuthority();
-    const [withdrawAuthority, _withdrawBump] =
+    const [issueAuthority, issueBump] = await this.generateIssueAuthority();
+    const [withdrawAuthority, withdrawBump] =
       await this.generateWithdrawAuthority();
 
     const signerInfo = getSignersFromPayer(payer);
@@ -123,6 +123,8 @@ export class BucketClient extends AccountUtils {
     const tx = await this.bucketProgram.rpc.createBucket(
       bucketBump,
       crateBump,
+      issueBump,
+      withdrawBump,
       {
         accounts,
         preInstructions: [
@@ -165,6 +167,64 @@ export class BucketClient extends AccountUtils {
         authority: payer.publicKey as PublicKey,
       },
       signers: [...signerInfo.signers],
+    });
+  };
+
+  deposit = async (
+    mintKP: Keypair,
+    collateralMintPK: PublicKey,
+    bucketKey: PublicKey,
+    crateKey: PublicKey,
+    issueAuthorityPK: PublicKey,
+    depositor: PublicKey | Keypair
+  ) => {
+    const signerInfo = getSignersFromPayer(depositor);
+
+    // TODO: fund depositor with Whitelisted Token
+    const depositorSource = await this.getOrCreateATA(
+      collateralMintPK,
+      signerInfo.payer,
+      signerInfo.payer,
+      this.provider.connection
+    );
+
+    const mintDestination = await this.getOrCreateATA(
+      mintKP.publicKey,
+      signerInfo.payer,
+      signerInfo.payer,
+      this.provider.connection
+    );
+
+    // QUESTION: edge case, BUT should the depositor pay the fees to create the bucket token account if it doesnt exist yet?
+    const collateralReserve = await this.getOrCreateATA(
+      collateralMintPK,
+      bucketKey,
+      signerInfo.payer,
+      this.provider.connection
+    );
+
+    return this.bucketProgram.rpc.deposit(new BN(1), {
+      accounts: {
+        bucket: bucketKey,
+        crateToken: crateKey,
+        crateMint: mintKP.publicKey,
+        collateralReserve: collateralReserve.address,
+        crateTokenProgram: CRATE_ADDRESSES.CrateToken,
+        depositor: signerInfo.payer,
+        depositorSource: depositorSource.address,
+        mintDestination: mintDestination.address,
+        systemProgram: SystemProgram.programId,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        issueAuthority: issueAuthorityPK,
+      },
+      preInstructions: [
+        ...(depositorSource.instruction ? [depositorSource.instruction] : []),
+        ...(mintDestination.instruction ? [mintDestination.instruction] : []),
+        ...(collateralReserve.instruction
+          ? [collateralReserve.instruction]
+          : []),
+      ],
+      signers: signerInfo.signers,
     });
   };
 }

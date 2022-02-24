@@ -96,7 +96,7 @@ pub struct Deposit<'info> {
             ],
             bump,
         )]
-    pub bucket: Account<'info, Bucket>,
+    pub bucket: Box<Account<'info, Bucket>>,
 
     /// System program.
     pub system_program: Program<'info, System>,
@@ -104,17 +104,18 @@ pub struct Deposit<'info> {
     /// Token program.
     pub token_program: Program<'info, Token>,
 
-    #[account(mut)]
+    // #[account(mut)]
     /// CHECK: unsafe account type, required for CPI invocation.
     pub crate_token: UncheckedAccount<'info>,
 
+    #[account(mut)]
     /// [Mint] of the [crate_token::CrateToken].
-    pub crate_mint: Account<'info, Mint>,
+    pub crate_mint: Box<Account<'info, Mint>>,
 
     /// [TokenAccount] holding the [Collateral] tokens of the [crate_token::CrateToken].
     /// unique reserver per collateral mint
     #[account(mut)]
-    pub collateral_reserve: Account<'info, TokenAccount>,
+    pub collateral_reserve: Box<Account<'info, TokenAccount>>,
 
     /// Crate token program.
     pub crate_token_program: Program<'info, crate_token::program::CrateToken>,
@@ -124,11 +125,11 @@ pub struct Deposit<'info> {
 
     /// Source of the deposited [Collateral] tokens
     #[account(mut)]
-    pub depositor_source: Account<'info, TokenAccount>,
+    pub depositor_source: Box<Account<'info, TokenAccount>>,
 
     /// Destination account that receives the issued token
     #[account(mut)]
-    pub mint_destination: Account<'info, TokenAccount>,
+    pub mint_destination: Box<Account<'info, TokenAccount>>,
 
     /// This account's pubkey is set to `issue_authority`.
     #[account(
@@ -137,7 +138,7 @@ pub struct Deposit<'info> {
         ],
         bump,
     )]
-    pub issue_authority: Account<'info, IssueAuthority>,
+    pub issue_authority: Box<Account<'info, IssueAuthority>>,
 }
 
 /// Accounts for [bucket-program::withdraw].

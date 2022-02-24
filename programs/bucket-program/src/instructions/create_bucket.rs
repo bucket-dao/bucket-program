@@ -3,7 +3,7 @@ use {
     crate::context::CreateBucket
 };
 
-pub fn handle(ctx: Context<CreateBucket>, bucket_bump: u8, crate_bump: u8) -> ProgramResult {
+pub fn handle(ctx: Context<CreateBucket>, bucket_bump: u8, crate_bump: u8, issue_authority_bump: u8, withdraw_authority_bump: u8) -> ProgramResult {
     crate_token::cpi::new_crate(
         CpiContext::new(
             ctx.accounts.crate_token_program.to_account_info(),
@@ -21,6 +21,10 @@ pub fn handle(ctx: Context<CreateBucket>, bucket_bump: u8, crate_bump: u8) -> Pr
         ),
         crate_bump,
     )?;
+
+    ctx.accounts.issue_authority.init(issue_authority_bump);
+    ctx.accounts.withdraw_authority.init(withdraw_authority_bump);
+
 
     ctx.accounts.bucket.init(
         bucket_bump,

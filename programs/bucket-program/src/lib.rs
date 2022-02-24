@@ -17,8 +17,16 @@ pub mod bucket_program {
         ctx: Context<CreateBucket>,
         bucket_bump: u8,
         crate_bump: u8,
+        issue_authority_bump: u8,
+        withdraw_authority_bump: u8,
     ) -> ProgramResult {
-        instructions::create_bucket::handle(ctx, bucket_bump, crate_bump)?;
+        instructions::create_bucket::handle(
+            ctx,
+            bucket_bump,
+            crate_bump,
+            issue_authority_bump,
+            withdraw_authority_bump,
+        )?;
 
         Ok(())
     }

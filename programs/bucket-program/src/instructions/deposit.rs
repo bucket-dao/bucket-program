@@ -2,10 +2,12 @@ use {crate::context::Deposit, crate::error::ErrorCode, anchor_lang::prelude::*};
 
 pub fn handle(ctx: Context<Deposit>, deposit_amount: u64) -> ProgramResult {
     let wl = &ctx.accounts.bucket.whitelist;
+
     require!(
-        !wl.contains(&ctx.accounts.depositor_source.mint.key()),
+        wl.contains(&ctx.accounts.depositor_source.mint.key()),
         ErrorCode::WrongCollateralError
     );
+    
     // transfer tokens to the bucket
     anchor_spl::token::transfer(
         CpiContext::new(
@@ -19,12 +21,14 @@ pub fn handle(ctx: Context<Deposit>, deposit_amount: u64) -> ProgramResult {
         deposit_amount,
     )?;
 
-    let issue_authority_signer_seeds: &[&[&[u8]]] =
-        &[&[b"issue", &[ctx.accounts.issue_authority.bump]]];
+    // let issue_authority_signer_seeds: &[&[&[u8]]] =
+    //     &[&[b"issue".as_ref(), &[ctx.accounts.issue_authority.bump]]];
 
+    msg!("biÖ {}", ctx.accounts.issue_authority.bump);
+    let seeds = &[b"issue".as_ref(), &[ctx.accounts.issue_authority.bump]];
     // issue new crate tokens
     crate_token::cpi::issue(
-        CpiContext::new_with_signer(
+        CpiContext::new(
             ctx.accounts.crate_token_program.to_account_info(),
             crate_token::cpi::accounts::Issue {
                 crate_token: ctx.accounts.crate_token.to_account_info(),
@@ -38,8 +42,7 @@ pub fn handle(ctx: Context<Deposit>, deposit_amount: u64) -> ProgramResult {
 
                 token_program: ctx.accounts.token_program.to_account_info(),
             },
-            issue_authority_signer_seeds,
-        ),
+        ).with_signer(&[seeds]),
         // 1-1 conversion for now, devs pls do something
         deposit_amount,
     )?;

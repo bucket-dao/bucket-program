@@ -54,6 +54,14 @@ export type BucketProgram = {
         {
           name: "crateBump";
           type: "u8";
+        },
+        {
+          name: "issueAuthorityBump";
+          type: "u8";
+        },
+        {
+          name: "withdrawAuthorityBump";
+          type: "u8";
         }
       ];
     },
@@ -87,34 +95,39 @@ export type BucketProgram = {
       name: "deposit";
       accounts: [
         {
-          name: "common";
-          accounts: [
-            {
-              name: "bucket";
-              isMut: false;
-              isSigner: false;
-            },
-            {
-              name: "crateToken";
-              isMut: true;
-              isSigner: false;
-            },
-            {
-              name: "crateMint";
-              isMut: false;
-              isSigner: false;
-            },
-            {
-              name: "collateralReserve";
-              isMut: true;
-              isSigner: false;
-            },
-            {
-              name: "crateTokenProgram";
-              isMut: false;
-              isSigner: false;
-            }
-          ];
+          name: "bucket";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "systemProgram";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "tokenProgram";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "crateToken";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "crateMint";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "collateralReserve";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "crateTokenProgram";
+          isMut: false;
+          isSigner: false;
         },
         {
           name: "depositor";
@@ -132,6 +145,27 @@ export type BucketProgram = {
           isSigner: false;
         },
         {
+          name: "issueAuthority";
+          isMut: false;
+          isSigner: false;
+        }
+      ];
+      args: [
+        {
+          name: "depositAmount";
+          type: "u64";
+        }
+      ];
+    },
+    {
+      name: "redeem";
+      accounts: [
+        {
+          name: "bucket";
+          isMut: false;
+          isSigner: false;
+        },
+        {
           name: "systemProgram";
           isMut: false;
           isSigner: false;
@@ -142,14 +176,49 @@ export type BucketProgram = {
           isSigner: false;
         },
         {
-          name: "issueAuthority";
+          name: "crateToken";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "crateMint";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "collateralReserve";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "crateTokenProgram";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "withdrawer";
+          isMut: false;
+          isSigner: true;
+        },
+        {
+          name: "withdrawerSource";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "withdrawDestination";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "withdrawAuthority";
           isMut: false;
           isSigner: false;
         }
       ];
       args: [
         {
-          name: "depositAmount";
+          name: "withdrawAmount";
           type: "u64";
         }
       ];
@@ -220,7 +289,12 @@ export type BucketProgram = {
     {
       code: 6001;
       name: "WrongCollateralError";
-      msg: "fuck";
+      msg: "Tried to deposit wrong collateral";
+    },
+    {
+      code: 6002;
+      name: "WrongBurnError";
+      msg: "Tried to burn wrong token";
     }
   ];
 };
@@ -282,6 +356,14 @@ export const IDL: BucketProgram = {
           name: "crateBump",
           type: "u8",
         },
+        {
+          name: "issueAuthorityBump",
+          type: "u8",
+        },
+        {
+          name: "withdrawAuthorityBump",
+          type: "u8",
+        },
       ],
     },
     {
@@ -314,34 +396,39 @@ export const IDL: BucketProgram = {
       name: "deposit",
       accounts: [
         {
-          name: "common",
-          accounts: [
-            {
-              name: "bucket",
-              isMut: false,
-              isSigner: false,
-            },
-            {
-              name: "crateToken",
-              isMut: true,
-              isSigner: false,
-            },
-            {
-              name: "crateMint",
-              isMut: false,
-              isSigner: false,
-            },
-            {
-              name: "collateralReserve",
-              isMut: true,
-              isSigner: false,
-            },
-            {
-              name: "crateTokenProgram",
-              isMut: false,
-              isSigner: false,
-            },
-          ],
+          name: "bucket",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "systemProgram",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "tokenProgram",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "crateToken",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "crateMint",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "collateralReserve",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "crateTokenProgram",
+          isMut: false,
+          isSigner: false,
         },
         {
           name: "depositor",
@@ -359,6 +446,27 @@ export const IDL: BucketProgram = {
           isSigner: false,
         },
         {
+          name: "issueAuthority",
+          isMut: false,
+          isSigner: false,
+        },
+      ],
+      args: [
+        {
+          name: "depositAmount",
+          type: "u64",
+        },
+      ],
+    },
+    {
+      name: "redeem",
+      accounts: [
+        {
+          name: "bucket",
+          isMut: false,
+          isSigner: false,
+        },
+        {
           name: "systemProgram",
           isMut: false,
           isSigner: false,
@@ -369,14 +477,49 @@ export const IDL: BucketProgram = {
           isSigner: false,
         },
         {
-          name: "issueAuthority",
+          name: "crateToken",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "crateMint",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "collateralReserve",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "crateTokenProgram",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "withdrawer",
+          isMut: false,
+          isSigner: true,
+        },
+        {
+          name: "withdrawerSource",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "withdrawDestination",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "withdrawAuthority",
           isMut: false,
           isSigner: false,
         },
       ],
       args: [
         {
-          name: "depositAmount",
+          name: "withdrawAmount",
           type: "u64",
         },
       ],
@@ -447,7 +590,12 @@ export const IDL: BucketProgram = {
     {
       code: 6001,
       name: "WrongCollateralError",
-      msg: "fuck",
+      msg: "Tried to deposit wrong collateral",
+    },
+    {
+      code: 6002,
+      name: "WrongBurnError",
+      msg: "Tried to burn wrong token",
     },
   ],
 };
