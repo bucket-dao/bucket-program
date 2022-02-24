@@ -62,7 +62,7 @@ export type BucketProgram = {
       "accounts": [
         {
           "name": "bucket",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -80,6 +80,77 @@ export type BucketProgram = {
         {
           "name": "mint",
           "type": "publicKey"
+        }
+      ]
+    },
+    {
+      "name": "deposit",
+      "accounts": [
+        {
+          "name": "common",
+          "accounts": [
+            {
+              "name": "bucket",
+              "isMut": false,
+              "isSigner": false
+            },
+            {
+              "name": "crateToken",
+              "isMut": true,
+              "isSigner": false
+            },
+            {
+              "name": "crateMint",
+              "isMut": false,
+              "isSigner": false
+            },
+            {
+              "name": "collateralReserve",
+              "isMut": true,
+              "isSigner": false
+            },
+            {
+              "name": "crateTokenProgram",
+              "isMut": false,
+              "isSigner": false
+            }
+          ]
+        },
+        {
+          "name": "depositor",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "depositorSource",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "mintDestination",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "issueAuthority",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "depositAmount",
+          "type": "u64"
         }
       ]
     }
@@ -138,6 +209,18 @@ export type BucketProgram = {
           }
         ]
       }
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "BucketDaoError",
+      "msg": "BucketDaoError"
+    },
+    {
+      "code": 6001,
+      "name": "WrongCollateralError",
+      "msg": "fuck"
     }
   ]
 };
@@ -206,7 +289,7 @@ export const IDL: BucketProgram = {
       "accounts": [
         {
           "name": "bucket",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -224,6 +307,77 @@ export const IDL: BucketProgram = {
         {
           "name": "mint",
           "type": "publicKey"
+        }
+      ]
+    },
+    {
+      "name": "deposit",
+      "accounts": [
+        {
+          "name": "common",
+          "accounts": [
+            {
+              "name": "bucket",
+              "isMut": false,
+              "isSigner": false
+            },
+            {
+              "name": "crateToken",
+              "isMut": true,
+              "isSigner": false
+            },
+            {
+              "name": "crateMint",
+              "isMut": false,
+              "isSigner": false
+            },
+            {
+              "name": "collateralReserve",
+              "isMut": true,
+              "isSigner": false
+            },
+            {
+              "name": "crateTokenProgram",
+              "isMut": false,
+              "isSigner": false
+            }
+          ]
+        },
+        {
+          "name": "depositor",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "depositorSource",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "mintDestination",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "issueAuthority",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "depositAmount",
+          "type": "u64"
         }
       ]
     }
@@ -282,6 +436,18 @@ export const IDL: BucketProgram = {
           }
         ]
       }
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "BucketDaoError",
+      "msg": "BucketDaoError"
+    },
+    {
+      "code": 6001,
+      "name": "WrongCollateralError",
+      "msg": "fuck"
     }
   ]
 };
