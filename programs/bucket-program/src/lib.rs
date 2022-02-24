@@ -30,7 +30,7 @@ pub mod bucket_program {
     }
     //deposit_issue?
     pub fn deposit(ctx: Context<Deposit>, deposit_amount: u64) -> ProgramResult {
-        instructions::deposit::handle(ctx, deposit_amount);
+        instructions::deposit::handle(ctx, deposit_amount)?;
         Ok(())
     }
 
