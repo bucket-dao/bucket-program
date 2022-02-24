@@ -156,7 +156,7 @@ export class BucketClient extends AccountUtils {
   authorizeCollateral = async (
     bucketKey: PublicKey,
     crateKey: PublicKey,
-    payer,
+    payer: PublicKey | Keypair,
     mint: Keypair
   ) => {
     const signerInfo: SignerInfo = getSignersFromPayer(payer);
@@ -164,13 +164,14 @@ export class BucketClient extends AccountUtils {
       accounts: {
         bucket: bucketKey,
         crateToken: crateKey,
-        authority: payer.publicKey as PublicKey,
+        authority: signerInfo.payer,
       },
       signers: [...signerInfo.signers],
     });
   };
 
   deposit = async (
+    depositAmount: number,
     mintKP: Keypair,
     collateralMintPK: PublicKey,
     bucketKey: PublicKey,
@@ -195,7 +196,6 @@ export class BucketClient extends AccountUtils {
       this.provider.connection
     );
 
-    // QUESTION: edge case, BUT should the depositor pay the fees to create the bucket token account if it doesnt exist yet?
     const collateralReserve = await this.getOrCreateATA(
       collateralMintPK,
       bucketKey,
@@ -203,9 +203,11 @@ export class BucketClient extends AccountUtils {
       this.provider.connection
     );
 
-    return this.bucketProgram.rpc.deposit(new BN(1), {
+    return this.bucketProgram.rpc.deposit(new BN(depositAmount), {
       accounts: {
         bucket: bucketKey,
+        systemProgram: SystemProgram.programId,
+        tokenProgram: TOKEN_PROGRAM_ID,
         crateToken: crateKey,
         crateMint: mintKP.publicKey,
         collateralReserve: collateralReserve.address,
@@ -213,8 +215,7 @@ export class BucketClient extends AccountUtils {
         depositor: signerInfo.payer,
         depositorSource: depositorSource.address,
         mintDestination: mintDestination.address,
-        systemProgram: SystemProgram.programId,
-        tokenProgram: TOKEN_PROGRAM_ID,
+
         issueAuthority: issueAuthorityPK,
       },
       preInstructions: [

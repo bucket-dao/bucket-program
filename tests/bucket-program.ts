@@ -28,7 +28,7 @@ describe("bucket-program", () => {
   let bucketKey: PublicKey;
   let crateKey: PublicKey;
   let issueAuthority: PublicKey;
-  let withdrawAuthority: PublicKey;
+  let _withdrawAuthority: PublicKey;
   let payer: Keypair;
 
   let mintKP: Keypair;
@@ -50,7 +50,7 @@ describe("bucket-program", () => {
     bucketKey = bucket;
     crateKey = crateToken;
     issueAuthority = _issueAuthority;
-    withdrawAuthority = _withdrawAuthority;
+    // withdrawAuthority = _withdrawAuthority;
   });
 
   it("Redeem tokens", () => {
@@ -74,6 +74,7 @@ describe("bucket-program", () => {
   });
 
   it("Issue tokens", async () => {
+    const depositAmount = 1_000_000;
     // fund depositor with sol
     const depositorKeypair = await nodeWallet.createFundedWallet(
       1 * LAMPORTS_PER_SOL
@@ -84,8 +85,7 @@ describe("bucket-program", () => {
       depositorKeypair.publicKey,
       client.provider.connection
     );
-    const balance = await client.getBalance(depositorKeypair.publicKey);
-    console.log(balance);
+
     const tx = new Transaction()
       .add(
         SystemProgram.createAccount({
@@ -124,9 +124,8 @@ describe("bucket-program", () => {
       collateralMint,
     ]);
 
-    console.log("crateKey: ", crateKey.toString());
-
     await client.deposit(
+      depositAmount,
       mintKP,
       collateralMint.publicKey,
       bucketKey,
