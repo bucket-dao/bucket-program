@@ -1,15 +1,18 @@
-import * as anchor from "@project-serum/anchor";
-import { Idl, Provider, Wallet, Program } from "@project-serum/anchor";
-import { SystemProgram, Connection, Keypair, PublicKey } from "@solana/web3.js";
-import { MintLayout, Token, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import {
-  generateCrateAddress,
   CRATE_ADDRESSES,
+  generateCrateAddress,
 } from "@crateprotocol/crate-sdk";
+import type { Idl, Wallet } from "@project-serum/anchor";
+import * as anchor from "@project-serum/anchor";
+import { Program, Provider } from "@project-serum/anchor";
+import { MintLayout, Token, TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import type { Connection, Keypair, PublicKey } from "@solana/web3.js";
+import { SystemProgram } from "@solana/web3.js";
 
-import { BucketProgram } from "./types/bucket_program";
 import { AccountUtils } from "./common/account-utils";
+import type { SignerInfo } from "./common/util";
 import { getSignersFromPayer } from "./common/util";
+import type { BucketProgram } from "./types/bucket_program";
 
 export class BucketClient extends AccountUtils {
   wallet: Wallet;
@@ -18,7 +21,6 @@ export class BucketClient extends AccountUtils {
 
   constructor(
     conn: Connection,
-    // @ts-ignore
     wallet: anchor.Wallet,
     idl?: Idl,
     programId?: PublicKey
@@ -29,16 +31,16 @@ export class BucketClient extends AccountUtils {
     this.setBucketProgram(idl, programId);
   }
 
-  setProvider() {
+  setProvider = () => {
     this.provider = new Provider(
       this.conn,
       this.wallet,
       Provider.defaultOptions()
     );
     anchor.setProvider(this.provider);
-  }
+  };
 
-  setBucketProgram(idl?: Idl, programId?: PublicKey) {
+  setBucketProgram = (idl?: Idl, programId?: PublicKey) => {
     // instantiating program depends on the environment
     if (idl && programId) {
       // means running in prod
@@ -49,13 +51,14 @@ export class BucketClient extends AccountUtils {
       );
     } else {
       // means running inside test suite
-      // @ts-ignore
       this.bucketProgram = anchor.workspace
         .BucketProgram as Program<BucketProgram>;
     }
-  }
+  };
 
+  // ================================================
   // PDAs
+  // ================================================
 
   generateBucketAddress = async (
     mint: PublicKey,
@@ -76,18 +79,22 @@ export class BucketClient extends AccountUtils {
     return this.findProgramAddress(programID, ["withdraw"]);
   };
 
-  // FETCH
+  // ================================================
+  // Fetch & deserialize objects
+  // ================================================
 
   fetchBucket = async (bucketKey: PublicKey) => {
     return this.bucketProgram.account.bucket.fetch(bucketKey);
   };
 
-  // ENDPOINTS
+  // ================================================
+  // Smart contract function helpers
+  // ================================================
 
   createBucket = async (
     mint: Keypair,
     payer: PublicKey | Keypair,
-    decimals: number = 9
+    decimals = 9
   ) => {
     const [crateKey, crateBump] = await generateCrateAddress(mint.publicKey);
     const [bucketKey, bucketBump] = await this.generateBucketAddress(crateKey);
@@ -150,12 +157,12 @@ export class BucketClient extends AccountUtils {
     payer,
     mint: Keypair
   ) => {
-    const signerInfo = getSignersFromPayer(payer);
+    const signerInfo: SignerInfo = getSignersFromPayer(payer);
     return this.bucketProgram.rpc.authorizeCollateral(mint.publicKey, {
       accounts: {
         bucket: bucketKey,
         crateToken: crateKey,
-        authority: payer.publicKey,
+        authority: payer.publicKey as PublicKey,
       },
       signers: [...signerInfo.signers],
     });

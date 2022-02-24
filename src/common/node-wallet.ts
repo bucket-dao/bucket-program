@@ -1,39 +1,37 @@
+import type { Wallet } from "@project-serum/anchor";
+import type { Connection, PublicKey } from "@solana/web3.js";
 import {
-    Connection,
-    Keypair,
-    PublicKey,
-    sendAndConfirmTransaction,
-    SystemProgram,
-    Transaction,
+  Keypair,
+  sendAndConfirmTransaction,
+  SystemProgram,
+  Transaction,
 } from "@solana/web3.js";
-import { Wallet } from "@project-serum/anchor";
+
 import { AccountUtils } from "./account-utils";
 
 export class NodeWallet extends AccountUtils {
-    wallet: Wallet; // instantiate with node wallet
+  wallet: Wallet; // instantiate with node wallet
 
-    constructor(connection: Connection, wallet: Wallet) {
-        super(connection);
-        this.wallet = wallet;
-    }
+  constructor(connection: Connection, wallet: Wallet) {
+    super(connection);
+    this.wallet = wallet;
+  }
 
-    fundWallet = async (wallet: PublicKey, lamports: number): Promise<void> => {
-        const transferTx = new Transaction().add(
-            SystemProgram.transfer({
-                fromPubkey: this.wallet.publicKey,
-                toPubkey: wallet,
-                lamports,
-            })
-        );
+  fundWallet = async (wallet: PublicKey, lamports: number): Promise<void> => {
+    const transferTx = new Transaction().add(
+      SystemProgram.transfer({
+        fromPubkey: this.wallet.publicKey,
+        toPubkey: wallet,
+        lamports,
+      })
+    );
 
-        await sendAndConfirmTransaction(this.conn, transferTx, [
-            this.wallet.payer,
-        ]);
-    };
+    await sendAndConfirmTransaction(this.conn, transferTx, [this.wallet.payer]);
+  };
 
-    createFundedWallet = async (lamports: number): Promise<Keypair> => {
-        const wallet = Keypair.generate();
-        await this.fundWallet(wallet.publicKey, lamports);
-        return wallet;
-    };
+  createFundedWallet = async (lamports: number): Promise<Keypair> => {
+    const wallet = Keypair.generate();
+    await this.fundWallet(wallet.publicKey, lamports);
+    return wallet;
+  };
 }
