@@ -36,7 +36,7 @@ pub mod bucket_program {
 
         Ok(())
     }
-    //deposit_issue?
+
     pub fn deposit(ctx: Context<Deposit>, deposit_amount: u64) -> ProgramResult {
         instructions::deposit::handle(ctx, deposit_amount)?;
         Ok(())
@@ -49,6 +49,4 @@ pub mod bucket_program {
         instructions::redeem::handle(ctx, withdraw_amount)?;
         Ok(())
     }
-
-    // deposit (issue), redeem (withdraw / redeem)
 }

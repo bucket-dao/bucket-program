@@ -2,10 +2,10 @@ import {
   CRATE_ADDRESSES,
   generateCrateAddress,
 } from "@crateprotocol/crate-sdk";
-import type { Idl, Wallet } from "@project-serum/anchor";
-import { BN, Program, Provider } from "@project-serum/anchor";
+import type { BN, Idl, Wallet } from "@project-serum/anchor";
 import * as anchor from "@project-serum/anchor";
-import { MintLayout, Token, TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { Program, Provider } from "@project-serum/anchor";
+import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import type { Connection, Keypair, PublicKey } from "@solana/web3.js";
 import { SystemProgram } from "@solana/web3.js";
 
@@ -83,8 +83,22 @@ export class BucketClient extends AccountUtils {
   // Fetch & deserialize objects
   // ================================================
 
-  fetchBucket = async (bucketKey: PublicKey) => {
-    return this.bucketProgram.account.bucket.fetch(bucketKey);
+  fetchBucket = async (bucket: PublicKey) => {
+    return this.bucketProgram.account.bucket.fetch(bucket);
+  };
+
+  // ================================================
+  // Fetch token account balanaces
+  // ================================================
+
+  fetchTokenBalance = async (
+    mint: PublicKey,
+    owner: PublicKey
+  ): Promise<number> => {
+    const addr = await this.findAssociatedTokenAddress(owner, mint);
+    const tokenBalance = await this.getTokenBalance(addr);
+
+    return +tokenBalance["value"]["amount"];
   };
 
   // ================================================
@@ -94,10 +108,10 @@ export class BucketClient extends AccountUtils {
   createBucket = async (
     mint: Keypair,
     payer: PublicKey | Keypair,
-    decimals = 9
+    decimals = 6
   ) => {
-    const [crateKey, crateBump] = await generateCrateAddress(mint.publicKey);
-    const [bucketKey, bucketBump] = await this.generateBucketAddress(crateKey);
+    const [crate, crateBump] = await generateCrateAddress(mint.publicKey);
+    const [bucket, bucketBump] = await this.generateBucketAddress(crate);
     const [issueAuthority, issueBump] = await this.generateIssueAuthority();
     const [withdrawAuthority, withdrawBump] =
       await this.generateWithdrawAuthority();
@@ -105,15 +119,16 @@ export class BucketClient extends AccountUtils {
     const signerInfo = getSignersFromPayer(payer);
     const crateATA = await this.getOrCreateATA(
       mint.publicKey,
-      crateKey,
+      crate,
       signerInfo.payer,
       this.provider.connection
     );
+
     const accounts = {
       crateMint: mint.publicKey,
       payer: signerInfo.payer,
-      bucket: bucketKey,
-      crateToken: crateKey,
+      bucket: bucket,
+      crateToken: crate,
       issueAuthority,
       withdrawAuthority,
       systemProgram: SystemProgram.programId,
@@ -128,22 +143,14 @@ export class BucketClient extends AccountUtils {
       {
         accounts,
         preInstructions: [
-          SystemProgram.createAccount({
-            fromPubkey: signerInfo.payer,
-            newAccountPubkey: mint.publicKey,
-            space: MintLayout.span,
-            lamports: await Token.getMinBalanceRentForExemptMint(
-              this.provider.connection
-            ),
-            programId: TOKEN_PROGRAM_ID,
-          }),
-          Token.createInitMintInstruction(
-            TOKEN_PROGRAM_ID,
+          ...(await this.mintTokens(
+            this.provider.connection,
+            signerInfo.payer,
             mint.publicKey,
-            decimals,
-            crateKey, // mintAuthority
-            crateKey // freezeAuthority
-          ),
+            crate,
+            crate,
+            decimals
+          )),
           ...(crateATA.instruction ? [crateATA.instruction] : []),
         ],
         signers: [mint, ...signerInfo.signers],
@@ -154,16 +161,16 @@ export class BucketClient extends AccountUtils {
   };
 
   authorizeCollateral = async (
-    bucketKey: PublicKey,
-    crateKey: PublicKey,
-    payer: PublicKey | Keypair,
-    mint: Keypair
+    collateral: PublicKey,
+    bucket: PublicKey,
+    crate: PublicKey,
+    payer: PublicKey | Keypair
   ) => {
     const signerInfo: SignerInfo = getSignersFromPayer(payer);
-    return this.bucketProgram.rpc.authorizeCollateral(mint.publicKey, {
+    return this.bucketProgram.rpc.authorizeCollateral(collateral, {
       accounts: {
-        bucket: bucketKey,
-        crateToken: crateKey,
+        bucket,
+        crateToken: crate,
         authority: signerInfo.payer,
       },
       signers: [...signerInfo.signers],
@@ -171,58 +178,60 @@ export class BucketClient extends AccountUtils {
   };
 
   deposit = async (
-    depositAmount: number,
-    mintKP: Keypair,
-    collateralMintPK: PublicKey,
-    bucketKey: PublicKey,
-    crateKey: PublicKey,
-    issueAuthorityPK: PublicKey,
+    amount: BN,
+    reserve: PublicKey,
+    collateral: PublicKey,
+    bucket: PublicKey,
+    crate: PublicKey,
+    issueAuthority: PublicKey,
     depositor: PublicKey | Keypair
   ) => {
     const signerInfo = getSignersFromPayer(depositor);
 
-    // TODO: fund depositor with Whitelisted Token
-    const depositorSource = await this.getOrCreateATA(
-      collateralMintPK,
+    const depsitorCollateralATA = await this.getOrCreateATA(
+      collateral,
       signerInfo.payer,
       signerInfo.payer,
       this.provider.connection
     );
 
-    const mintDestination = await this.getOrCreateATA(
-      mintKP.publicKey,
+    const depositorReserveATA = await this.getOrCreateATA(
+      reserve,
       signerInfo.payer,
       signerInfo.payer,
       this.provider.connection
     );
 
-    const collateralReserve = await this.getOrCreateATA(
-      collateralMintPK,
-      crateKey,
+    const crateCollateralATA = await this.getOrCreateATA(
+      collateral,
+      crate, // or, bucket?
       signerInfo.payer,
       this.provider.connection
     );
 
-    return this.bucketProgram.rpc.deposit(new BN(depositAmount), {
+    return this.bucketProgram.rpc.deposit(amount, {
       accounts: {
-        bucket: bucketKey,
-        systemProgram: SystemProgram.programId,
-        tokenProgram: TOKEN_PROGRAM_ID,
-        crateToken: crateKey,
-        crateMint: mintKP.publicKey,
-        collateralReserve: collateralReserve.address,
-        crateTokenProgram: CRATE_ADDRESSES.CrateToken,
+        bucket,
+        crateToken: crate,
+        crateMint: reserve,
+        collateralReserve: crateCollateralATA.address,
         depositor: signerInfo.payer,
-        depositorSource: depositorSource.address,
-        mintDestination: mintDestination.address,
-
-        issueAuthority: issueAuthorityPK,
+        depositorSource: depsitorCollateralATA.address,
+        mintDestination: depositorReserveATA.address,
+        issueAuthority: issueAuthority,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        systemProgram: SystemProgram.programId,
+        crateTokenProgram: CRATE_ADDRESSES.CrateToken,
       },
       preInstructions: [
-        ...(depositorSource.instruction ? [depositorSource.instruction] : []),
-        ...(mintDestination.instruction ? [mintDestination.instruction] : []),
-        ...(collateralReserve.instruction
-          ? [collateralReserve.instruction]
+        ...(depsitorCollateralATA.instruction
+          ? [depsitorCollateralATA.instruction]
+          : []),
+        ...(depositorReserveATA.instruction
+          ? [depositorReserveATA.instruction]
+          : []),
+        ...(crateCollateralATA.instruction
+          ? [crateCollateralATA.instruction]
           : []),
       ],
       signers: signerInfo.signers,
@@ -230,70 +239,64 @@ export class BucketClient extends AccountUtils {
   };
 
   redeem = async (
-    withdrawAmount: number,
-    mintKP: Keypair,
-    collateralMintPK: PublicKey,
-    bucketKey: PublicKey,
-    crateKey: PublicKey,
-    withdrawAuthorityPK: PublicKey,
+    amount: BN,
+    reserve: PublicKey,
+    collateral: PublicKey,
+    bucket: PublicKey,
+    crate: PublicKey,
+    withdrawAuthority: PublicKey,
     withdrawer: PublicKey | Keypair
   ) => {
     const signerInfo = getSignersFromPayer(withdrawer);
 
-    const withdrawerSource = await this.getOrCreateATA(
-      mintKP.publicKey,
+    const withdrawerReserveATA = await this.getOrCreateATA(
+      reserve,
       signerInfo.payer,
       signerInfo.payer,
       this.provider.connection
     );
 
-    const withdrawDestination = await this.getOrCreateATA(
-      collateralMintPK,
+    // move to extra accounts when withdrawing multiple collateral mints
+    const withdrawerCollateralATA = await this.getOrCreateATA(
+      collateral,
       signerInfo.payer,
       signerInfo.payer,
       this.provider.connection
     );
 
-    const collateralReserve = await this.getOrCreateATA(
-      collateralMintPK,
-      crateKey,
+    const crateCollateralATA = await this.getOrCreateATA(
+      collateral,
+      crate,
       signerInfo.payer,
       this.provider.connection
     );
 
-    await this.bucketProgram.rpc.redeem(new BN(withdrawAmount), {
+    return this.bucketProgram.rpc.redeem(amount, {
       accounts: {
-        bucket: bucketKey,
-        systemProgram: SystemProgram.programId,
-        tokenProgram: TOKEN_PROGRAM_ID,
-        crateToken: crateKey,
-        crateMint: mintKP.publicKey,
-        collateralReserve: collateralReserve.address,
-        crateTokenProgram: CRATE_ADDRESSES.CrateToken,
-
+        bucket: bucket,
+        crateToken: crate,
+        crateMint: reserve,
+        collateralReserve: crateCollateralATA.address,
         withdrawer: signerInfo.payer,
-        withdrawerSource: withdrawerSource.address,
-
-        withdrawDestination: withdrawDestination.address,
-
-        withdrawAuthority: withdrawAuthorityPK,
+        withdrawerSource: withdrawerReserveATA.address,
+        withdrawDestination: withdrawerCollateralATA.address,
+        withdrawAuthority: withdrawAuthority,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        systemProgram: SystemProgram.programId,
+        crateTokenProgram: CRATE_ADDRESSES.CrateToken,
       },
       preInstructions: [
-        ...(withdrawerSource.instruction ? [withdrawerSource.instruction] : []),
-        ...(withdrawDestination.instruction
-          ? [withdrawDestination.instruction]
+        ...(withdrawerReserveATA.instruction
+          ? [withdrawerReserveATA.instruction]
           : []),
-        ...(collateralReserve.instruction
-          ? [collateralReserve.instruction]
+        ...(withdrawerCollateralATA.instruction
+          ? [withdrawerCollateralATA.instruction]
+          : []),
+        ...(crateCollateralATA.instruction
+          ? [crateCollateralATA.instruction]
           : []),
       ],
       signers: signerInfo.signers,
     });
-
-    return {
-      collateralReserve: collateralReserve.address,
-      withdrawerSource: withdrawerSource.address,
-      withdrawDestination: withdrawDestination.address,
-    };
   };
 }

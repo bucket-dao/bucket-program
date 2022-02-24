@@ -1,5 +1,8 @@
+import { u64 } from "@solana/spl-token";
 import type { PublicKey } from "@solana/web3.js";
 import { Keypair } from "@solana/web3.js";
+
+export const U64_ZERO = new u64(0);
 
 export interface SignerInfo {
   payer: PublicKey;
