@@ -1,34 +1,34 @@
-use {
-    anchor_lang::prelude::*,
-    crate::context::Deposit,
-    crate::error::ErrorCode,
-};
+use {crate::context::Deposit, crate::error::ErrorCode, anchor_lang::prelude::*};
 
 pub fn handle(ctx: Context<Deposit>, deposit_amount: u64) -> ProgramResult {
-    let wl = &ctx.accounts.common.bucket.whitelist;
-    require!(!wl.contains(&ctx.accounts.depositor_source.mint.key()), ErrorCode::WrongCollateralError); 
+    let wl = &ctx.accounts.bucket.whitelist;
+    require!(
+        !wl.contains(&ctx.accounts.depositor_source.mint.key()),
+        ErrorCode::WrongCollateralError
+    );
     // transfer tokens to the bucket
     anchor_spl::token::transfer(
         CpiContext::new(
             ctx.accounts.token_program.to_account_info(),
             anchor_spl::token::Transfer {
                 from: ctx.accounts.depositor_source.to_account_info(),
-                to: ctx.accounts.common.collateral_reserve.to_account_info(),
+                to: ctx.accounts.collateral_reserve.to_account_info(),
                 authority: ctx.accounts.depositor.to_account_info(),
             },
         ),
         deposit_amount,
     )?;
 
-    let issue_authority_signer_seeds: &[&[&[u8]]] = &[&[b"issue", &[ctx.accounts.issue_authority.bump]]];
+    let issue_authority_signer_seeds: &[&[&[u8]]] =
+        &[&[b"issue", &[ctx.accounts.issue_authority.bump]]];
 
     // issue new crate tokens
     crate_token::cpi::issue(
         CpiContext::new_with_signer(
-            ctx.accounts.common.crate_token_program.to_account_info(),
+            ctx.accounts.crate_token_program.to_account_info(),
             crate_token::cpi::accounts::Issue {
-                crate_token: ctx.accounts.common.crate_token.to_account_info(),
-                crate_mint: ctx.accounts.common.crate_mint.to_account_info(),
+                crate_token: ctx.accounts.crate_token.to_account_info(),
+                crate_mint: ctx.accounts.crate_mint.to_account_info(),
                 issue_authority: ctx.accounts.issue_authority.to_account_info(),
                 mint_destination: ctx.accounts.mint_destination.to_account_info(),
 

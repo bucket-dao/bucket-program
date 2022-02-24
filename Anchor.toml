@@ -6,7 +6,7 @@ url = "https://anchor.projectserum.com"
 
 [provider]
 cluster = "localnet"
-wallet = ""
+wallet = "/Users/sanny/.config/solana/devnet.json"
 
 [scripts]
 test = "ts-mocha -p ./tsconfig.json -t 1000000 tests/*.ts"

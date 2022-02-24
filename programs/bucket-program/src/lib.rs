@@ -1,9 +1,9 @@
 use anchor_lang::prelude::*;
 
 mod context;
+mod error;
 mod instructions;
 mod state;
-mod error;
 
 use context::*;
 
@@ -31,6 +31,11 @@ pub mod bucket_program {
     //deposit_issue?
     pub fn deposit(ctx: Context<Deposit>, deposit_amount: u64) -> ProgramResult {
         instructions::deposit::handle(ctx, deposit_amount)?;
+        Ok(())
+    }
+
+    pub fn redeem(ctx: Context<Withdraw>, withdraw_amount: u64) -> ProgramResult {
+        instructions::withdraw::handle(ctx, withdraw_amount)?;
         Ok(())
     }
 

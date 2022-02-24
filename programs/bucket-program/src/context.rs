@@ -2,7 +2,7 @@ use {
     crate::state::addresses::{IssueAuthority, WithdrawAuthority},
     crate::state::bucket::Bucket,
     anchor_lang::prelude::*,
-    anchor_spl::token::{Mint, TokenAccount, Token},
+    anchor_spl::token::{Mint, Token, TokenAccount},
 };
 
 /// Accounts for [bucket-program::create_bucket].
@@ -80,7 +80,7 @@ pub struct AuthorizeCollateral<'info> {
 
     /// CHECK: unsafe account type, required for CPI invocation.
     pub crate_token: UncheckedAccount<'info>,
-    
+
     /// Signer
     pub authority: Signer<'info>,
 }
@@ -88,8 +88,36 @@ pub struct AuthorizeCollateral<'info> {
 /// Accounts for [bucket-program::deposit].
 #[derive(Accounts)]
 pub struct Deposit<'info> {
-    /// Common accounts.
-    pub common: Common<'info>,
+    /// Information about the [Bucket].
+    #[account(
+            seeds = [
+                b"bucket".as_ref(),
+                crate_token.key().to_bytes().as_ref()
+            ],
+            bump,
+        )]
+    pub bucket: Account<'info, Bucket>,
+
+    /// System program.
+    pub system_program: Program<'info, System>,
+
+    /// Token program.
+    pub token_program: Program<'info, Token>,
+
+    #[account(mut)]
+    /// CHECK: unsafe account type, required for CPI invocation.
+    pub crate_token: UncheckedAccount<'info>,
+
+    /// [Mint] of the [crate_token::CrateToken].
+    pub crate_mint: Account<'info, Mint>,
+
+    /// [TokenAccount] holding the [Collateral] tokens of the [crate_token::CrateToken].
+    /// unique reserver per collateral mint
+    #[account(mut)]
+    pub collateral_reserve: Account<'info, TokenAccount>,
+
+    /// Crate token program.
+    pub crate_token_program: Program<'info, crate_token::program::CrateToken>,
 
     /// User that deposits the whitelisted mint token
     pub depositor: Signer<'info>,
@@ -102,12 +130,6 @@ pub struct Deposit<'info> {
     #[account(mut)]
     pub mint_destination: Account<'info, TokenAccount>,
 
-    /// System program.
-    pub system_program: Program<'info, System>,
-
-    /// Token program.
-    pub token_program: Program<'info, Token>,
-
     /// This account's pubkey is set to `issue_authority`.
     #[account(
         seeds = [
@@ -116,6 +138,61 @@ pub struct Deposit<'info> {
         bump,
     )]
     pub issue_authority: Account<'info, IssueAuthority>,
+}
+
+/// Accounts for [bucket-program::withdraw].
+#[derive(Accounts)]
+pub struct Withdraw<'info> {
+    /// Information about the [Bucket].
+    #[account(
+            seeds = [
+                b"bucket".as_ref(),
+                crate_token.key().to_bytes().as_ref()
+            ],
+            bump,
+        )]
+    pub bucket: Account<'info, Bucket>,
+
+    /// System program.
+    pub system_program: Program<'info, System>,
+
+    /// Token program.
+    pub token_program: Program<'info, Token>,
+
+    #[account(mut)]
+    /// CHECK: unsafe account type, required for CPI invocation.
+    pub crate_token: UncheckedAccount<'info>,
+
+    /// [Mint] of the [crate_token::CrateToken].
+    pub crate_mint: Account<'info, Mint>,
+
+    /// [TokenAccount] holding the [Collateral] tokens of the [crate_token::CrateToken].
+    /// unique reserver per collateral mint
+    #[account(mut)]
+    pub collateral_reserve: Account<'info, TokenAccount>,
+
+    /// Crate token program.
+    pub crate_token_program: Program<'info, crate_token::program::CrateToken>,
+
+    /// User that deposits the whitelisted mint token
+    pub withdrawer: Signer<'info>,
+
+    /// Source of the deposited [Collateral] tokens
+    #[account(mut)]
+    pub withdrawer_source: Account<'info, TokenAccount>,
+
+    /// Destination account that receives the collateral token
+    #[account(mut)]
+    pub withdraw_destination: Account<'info, TokenAccount>,
+
+    /// This account's pubkey is set to `issue_authority`.
+    #[account(
+        seeds = [
+            b"withdraw".as_ref()
+        ],
+        bump,
+    )]
+    pub withdraw_authority: Account<'info, WithdrawAuthority>,
 }
 
 #[derive(Accounts)]
@@ -130,11 +207,17 @@ pub struct Common<'info> {
     )]
     pub bucket: Account<'info, Bucket>,
 
+    /// System program.
+    pub system_program: Program<'info, System>,
+
+    /// Token program.
+    pub token_program: Program<'info, Token>,
+
     #[account(mut)]
     /// CHECK: unsafe account type, required for CPI invocation.
     pub crate_token: UncheckedAccount<'info>,
 
-    /// [Mint] of the [crate_token::CrateToken]. 
+    /// [Mint] of the [crate_token::CrateToken].
     pub crate_mint: Account<'info, Mint>,
 
     /// [TokenAccount] holding the [Collateral] tokens of the [crate_token::CrateToken].
@@ -144,6 +227,4 @@ pub struct Common<'info> {
 
     /// Crate token program.
     pub crate_token_program: Program<'info, crate_token::program::CrateToken>,
-
-
 }

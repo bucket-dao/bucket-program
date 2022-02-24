@@ -4,6 +4,8 @@ use anchor_lang::prelude::*;
 pub enum ErrorCode {
     #[msg("BucketDaoError")]
     BucketDaoError,
-    #[msg("fuck")]
+    #[msg("Tried to deposit wrong collateral")]
     WrongCollateralError,
+    #[msg("Tried to burn wrong token")]
+    WrongBurnError,
 }
