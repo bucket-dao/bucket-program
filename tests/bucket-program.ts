@@ -28,12 +28,15 @@ describe("bucket-program", () => {
   let bucketKey: PublicKey;
   let crateKey: PublicKey;
   let issueAuthority: PublicKey;
-  let _withdrawAuthority: PublicKey;
+  let withdrawAuthority: PublicKey;
   let payer: Keypair;
+  let userKeypair: Keypair;
 
   let mintKP: Keypair;
 
   let collateralMint: Keypair;
+
+  const depositAmount = 1_000_000_000;
 
   // beforeEach does not work — results in address in use? probably w.r.t the issue/withdraw authorities.
   before(async () => {
@@ -50,11 +53,7 @@ describe("bucket-program", () => {
     bucketKey = bucket;
     crateKey = crateToken;
     issueAuthority = _issueAuthority;
-    // withdrawAuthority = _withdrawAuthority;
-  });
-
-  it("Redeem tokens", () => {
-    console.log("Redeem underlyings in exchange for bucket tokens");
+    withdrawAuthority = _withdrawAuthority;
   });
 
   it("Authorize collateral", async () => {
@@ -69,27 +68,29 @@ describe("bucket-program", () => {
 
     const bucket = await client.fetchBucket(bucketKey);
     const whitelist = bucket.whitelist as PublicKey[];
-    expect(whitelist.length === 1);
-    expect(whitelist[0] === collateralMint.publicKey);
+    expect(whitelist.length).to.equal(1);
+    expect(whitelist[0].toBase58()).to.equal(
+      collateralMint.publicKey.toBase58()
+    );
   });
 
   it("Issue tokens", async () => {
-    const depositAmount = 1_000_000;
     // fund depositor with sol
-    const depositorKeypair = await nodeWallet.createFundedWallet(
-      1 * LAMPORTS_PER_SOL
-    );
+    userKeypair = await nodeWallet.createFundedWallet(1 * LAMPORTS_PER_SOL);
+
+    // collateral mint associated token account of depositor
     const collateralATA = await client.getOrCreateATA(
       collateralMint.publicKey,
-      depositorKeypair.publicKey,
-      depositorKeypair.publicKey,
+      userKeypair.publicKey,
+      userKeypair.publicKey,
       client.provider.connection
     );
 
+    // create collateral mint and fund depositor instruction
     const tx = new Transaction()
       .add(
         SystemProgram.createAccount({
-          fromPubkey: depositorKeypair.publicKey,
+          fromPubkey: userKeypair.publicKey,
           newAccountPubkey: collateralMint.publicKey,
           space: MintLayout.span,
           lamports: await Token.getMinBalanceRentForExemptMint(
@@ -103,8 +104,8 @@ describe("bucket-program", () => {
           TOKEN_PROGRAM_ID,
           collateralMint.publicKey,
           9,
-          depositorKeypair.publicKey, // mintAuthority
-          depositorKeypair.publicKey // freezeAuthority
+          userKeypair.publicKey, // mintAuthority
+          userKeypair.publicKey // freezeAuthority
         )
       )
       .add(collateralATA.instruction)
@@ -113,14 +114,14 @@ describe("bucket-program", () => {
           TOKEN_PROGRAM_ID,
           collateralMint.publicKey,
           collateralATA.address,
-          depositorKeypair.publicKey,
+          userKeypair.publicKey,
           [],
-          1_000_000_000
+          depositAmount
         )
       );
 
     await sendAndConfirmTransaction(client.provider.connection, tx, [
-      depositorKeypair,
+      userKeypair,
       collateralMint,
     ]);
 
@@ -131,7 +132,38 @@ describe("bucket-program", () => {
       bucketKey,
       crateKey,
       issueAuthority,
-      depositorKeypair
+      userKeypair
     );
+  });
+
+  it("Redeem tokens", async () => {
+    const withdrawAmount = depositAmount;
+
+    const { collateralReserve, withdrawerSource, withdrawDestination } =
+      await client.redeem(
+        withdrawAmount,
+        mintKP,
+        collateralMint.publicKey,
+        bucketKey,
+        crateKey,
+        withdrawAuthority,
+        userKeypair
+      );
+
+    const postCollateralReserveBalance =
+      await _provider.connection.getTokenAccountBalance(collateralReserve);
+    const postBucketMintBalance =
+      await _provider.connection.getTokenAccountBalance(withdrawerSource);
+    const postCollateralBalance =
+      await _provider.connection.getTokenAccountBalance(withdrawDestination);
+
+    // CRATE COLLATERAL BALANCE
+    // expect(+postCollateralReserveBalance.value.amount).to.equal(0);
+
+    // USER CRATE MINT BALANCE
+    expect(+postBucketMintBalance.value.amount).to.equal(0);
+
+    // USER COLLATERAL BALANCE
+    // expect(+postCollateralBalance.value.amount).to.equal(withdrawAmount);
   });
 });

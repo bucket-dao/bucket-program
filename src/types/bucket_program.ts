@@ -177,12 +177,12 @@ export type BucketProgram = {
         },
         {
           "name": "crateToken",
-          "isMut": true,
+          "isMut": false,
           "isSigner": false
         },
         {
           "name": "crateMint",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -478,12 +478,12 @@ export const IDL: BucketProgram = {
         },
         {
           "name": "crateToken",
-          "isMut": true,
+          "isMut": false,
           "isSigner": false
         },
         {
           "name": "crateMint",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {

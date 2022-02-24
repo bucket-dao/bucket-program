@@ -198,7 +198,7 @@ export class BucketClient extends AccountUtils {
 
     const collateralReserve = await this.getOrCreateATA(
       collateralMintPK,
-      bucketKey,
+      crateKey,
       signerInfo.payer,
       this.provider.connection
     );
@@ -227,5 +227,73 @@ export class BucketClient extends AccountUtils {
       ],
       signers: signerInfo.signers,
     });
+  };
+
+  redeem = async (
+    withdrawAmount: number,
+    mintKP: Keypair,
+    collateralMintPK: PublicKey,
+    bucketKey: PublicKey,
+    crateKey: PublicKey,
+    withdrawAuthorityPK: PublicKey,
+    withdrawer: PublicKey | Keypair
+  ) => {
+    const signerInfo = getSignersFromPayer(withdrawer);
+
+    const withdrawerSource = await this.getOrCreateATA(
+      mintKP.publicKey,
+      signerInfo.payer,
+      signerInfo.payer,
+      this.provider.connection
+    );
+
+    const withdrawDestination = await this.getOrCreateATA(
+      collateralMintPK,
+      signerInfo.payer,
+      signerInfo.payer,
+      this.provider.connection
+    );
+
+    const collateralReserve = await this.getOrCreateATA(
+      collateralMintPK,
+      crateKey,
+      signerInfo.payer,
+      this.provider.connection
+    );
+
+    await this.bucketProgram.rpc.redeem(new BN(withdrawAmount), {
+      accounts: {
+        bucket: bucketKey,
+        systemProgram: SystemProgram.programId,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        crateToken: crateKey,
+        crateMint: mintKP.publicKey,
+        collateralReserve: collateralReserve.address,
+        crateTokenProgram: CRATE_ADDRESSES.CrateToken,
+
+        withdrawer: signerInfo.payer,
+        withdrawerSource: withdrawerSource.address,
+
+        withdrawDestination: withdrawDestination.address,
+
+        withdrawAuthority: withdrawAuthorityPK,
+      },
+      preInstructions: [
+        ...(withdrawerSource.instruction ? [withdrawerSource.instruction] : []),
+        ...(withdrawDestination.instruction
+          ? [withdrawDestination.instruction]
+          : []),
+        ...(collateralReserve.instruction
+          ? [collateralReserve.instruction]
+          : []),
+      ],
+      signers: signerInfo.signers,
+    });
+
+    return {
+      collateralReserve: collateralReserve.address,
+      withdrawerSource: withdrawerSource.address,
+      withdrawDestination: withdrawDestination.address,
+    };
   };
 }
