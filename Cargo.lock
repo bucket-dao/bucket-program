@@ -361,6 +361,8 @@ dependencies = [
  "anchor-spl",
  "crate-redeem-in-kind",
  "crate-token",
+ "num-traits",
+ "vipers",
 ]
 
 [[package]]

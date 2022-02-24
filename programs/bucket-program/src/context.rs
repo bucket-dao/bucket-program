@@ -141,9 +141,9 @@ pub struct Deposit<'info> {
     pub issue_authority: Box<Account<'info, IssueAuthority>>,
 }
 
-/// Accounts for [bucket-program::withdraw].
+/// Accounts for [bucket-program::redeem].
 #[derive(Accounts)]
-pub struct Withdraw<'info> {
+pub struct Redeem<'info> {
     /// Information about the [Bucket].
     #[account(
             seeds = [
@@ -152,7 +152,7 @@ pub struct Withdraw<'info> {
             ],
             bump,
         )]
-    pub bucket: Account<'info, Bucket>,
+    pub bucket: Box<Account<'info, Bucket>>,
 
     /// System program.
     pub system_program: Program<'info, System>,
@@ -160,17 +160,17 @@ pub struct Withdraw<'info> {
     /// Token program.
     pub token_program: Program<'info, Token>,
 
-    #[account(mut)]
     /// CHECK: unsafe account type, required for CPI invocation.
     pub crate_token: UncheckedAccount<'info>,
 
     /// [Mint] of the [crate_token::CrateToken].
-    pub crate_mint: Account<'info, Mint>,
+    #[account(mut)]
+    pub crate_mint: Box<Account<'info, Mint>>,
 
     /// [TokenAccount] holding the [Collateral] tokens of the [crate_token::CrateToken].
     /// unique reserver per collateral mint
     #[account(mut)]
-    pub collateral_reserve: Account<'info, TokenAccount>,
+    pub collateral_reserve: Box<Account<'info, TokenAccount>>,
 
     /// Crate token program.
     pub crate_token_program: Program<'info, crate_token::program::CrateToken>,
@@ -180,11 +180,11 @@ pub struct Withdraw<'info> {
 
     /// Source of the deposited [Collateral] tokens
     #[account(mut)]
-    pub withdrawer_source: Account<'info, TokenAccount>,
+    pub withdrawer_source: Box<Account<'info, TokenAccount>>,
 
     /// Destination account that receives the collateral token
     #[account(mut)]
-    pub withdraw_destination: Account<'info, TokenAccount>,
+    pub withdraw_destination: Box<Account<'info, TokenAccount>>,
 
     /// This account's pubkey is set to `issue_authority`.
     #[account(
@@ -193,7 +193,27 @@ pub struct Withdraw<'info> {
         ],
         bump,
     )]
-    pub withdraw_authority: Account<'info, WithdrawAuthority>,
+    pub withdraw_authority: Box<Account<'info, WithdrawAuthority>>,
+}
+
+/// Asset redeemed in [crate_redeem_in_kind::redeem].
+#[derive(Accounts)]
+pub struct RedeemAsset<'info> {
+    /// Crate account of the tokens
+    #[account(mut)]
+    pub crate_underlying: Box<Account<'info, TokenAccount>>,
+
+    /// Destination of the tokens to redeem
+    #[account(mut)]
+    pub withdraw_destination: Box<Account<'info, TokenAccount>>,
+
+    /// Author fee token destination
+    #[account(mut)]
+    pub author_fee_destination: Box<Account<'info, TokenAccount>>,
+
+    /// Protocol fee token destination
+    #[account(mut)]
+    pub protocol_fee_destination: Box<Account<'info, TokenAccount>>,
 }
 
 #[derive(Accounts)]

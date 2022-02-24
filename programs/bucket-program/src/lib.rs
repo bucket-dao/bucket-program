@@ -42,8 +42,11 @@ pub mod bucket_program {
         Ok(())
     }
 
-    pub fn redeem(ctx: Context<Withdraw>, withdraw_amount: u64) -> ProgramResult {
-        instructions::withdraw::handle(ctx, withdraw_amount)?;
+    pub fn redeem<'info>(
+        ctx: Context<'_, '_, '_, 'info, Redeem<'info>>,
+        withdraw_amount: u64,
+    ) -> ProgramResult {
+        instructions::redeem::handle(ctx, withdraw_amount)?;
         Ok(())
     }
 
