@@ -6,12 +6,17 @@ export type BucketProgram = {
       "name": "createBucket",
       "accounts": [
         {
-          "name": "payer",
+          "name": "bucket",
           "isMut": true,
-          "isSigner": true
+          "isSigner": false
         },
         {
-          "name": "bucket",
+          "name": "crateMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "crateToken",
           "isMut": true,
           "isSigner": false
         },
@@ -26,14 +31,9 @@ export type BucketProgram = {
           "isSigner": false
         },
         {
-          "name": "crateMint",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "crateToken",
+          "name": "payer",
           "isMut": true,
-          "isSigner": false
+          "isSigner": true
         },
         {
           "name": "systemProgram",
@@ -69,11 +69,6 @@ export type BucketProgram = {
       "name": "authorizeCollateral",
       "accounts": [
         {
-          "name": "authority",
-          "isMut": false,
-          "isSigner": true
-        },
-        {
           "name": "bucket",
           "isMut": true,
           "isSigner": false
@@ -82,6 +77,11 @@ export type BucketProgram = {
           "name": "crateToken",
           "isMut": false,
           "isSigner": false
+        },
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true
         }
       ],
       "args": [
@@ -95,63 +95,58 @@ export type BucketProgram = {
       "name": "deposit",
       "accounts": [
         {
+          "name": "bucket",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "crateToken",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "crateMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "collateralReserve",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "crateTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "depositor",
           "isMut": false,
           "isSigner": true
         },
         {
-          "name": "common",
-          "accounts": [
-            {
-              "name": "bucket",
-              "isMut": false,
-              "isSigner": false
-            },
-            {
-              "name": "crateToken",
-              "isMut": false,
-              "isSigner": false
-            },
-            {
-              "name": "crateMint",
-              "isMut": true,
-              "isSigner": false
-            },
-            {
-              "name": "crateTokenProgram",
-              "isMut": false,
-              "isSigner": false
-            },
-            {
-              "name": "systemProgram",
-              "isMut": false,
-              "isSigner": false
-            },
-            {
-              "name": "tokenProgram",
-              "isMut": false,
-              "isSigner": false
-            }
-          ]
+          "name": "depositorSource",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "mintDestination",
+          "isMut": true,
+          "isSigner": false
         },
         {
           "name": "issueAuthority",
           "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "crateCollateral",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "depositorCollateral",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "depositorReserve",
-          "isMut": true,
           "isSigner": false
         }
       ],
@@ -166,53 +161,58 @@ export type BucketProgram = {
       "name": "redeem",
       "accounts": [
         {
+          "name": "bucket",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "crateToken",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "crateMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "collateralReserve",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "crateTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "withdrawer",
           "isMut": false,
           "isSigner": true
         },
         {
-          "name": "common",
-          "accounts": [
-            {
-              "name": "bucket",
-              "isMut": false,
-              "isSigner": false
-            },
-            {
-              "name": "crateToken",
-              "isMut": false,
-              "isSigner": false
-            },
-            {
-              "name": "crateMint",
-              "isMut": true,
-              "isSigner": false
-            },
-            {
-              "name": "crateTokenProgram",
-              "isMut": false,
-              "isSigner": false
-            },
-            {
-              "name": "systemProgram",
-              "isMut": false,
-              "isSigner": false
-            },
-            {
-              "name": "tokenProgram",
-              "isMut": false,
-              "isSigner": false
-            }
-          ]
+          "name": "withdrawerSource",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "withdrawDestination",
+          "isMut": true,
+          "isSigner": false
         },
         {
           "name": "withdrawAuthority",
           "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "withdrawerReserve",
-          "isMut": true,
           "isSigner": false
         }
       ],
@@ -225,6 +225,30 @@ export type BucketProgram = {
     }
   ],
   "accounts": [
+    {
+      "name": "issueAuthority",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "withdrawAuthority",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
     {
       "name": "bucket",
       "type": {
@@ -254,49 +278,23 @@ export type BucketProgram = {
           }
         ]
       }
-    },
-    {
-      "name": "issueAuthority",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "bump",
-            "type": "u8"
-          }
-        ]
-      }
-    },
-    {
-      "name": "withdrawAuthority",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "bump",
-            "type": "u8"
-          }
-        ]
-      }
     }
   ],
-  "types": [
+  "errors": [
     {
-      "name": "ErrorCode",
-      "type": {
-        "kind": "enum",
-        "variants": [
-          {
-            "name": "WrongCollateralError"
-          },
-          {
-            "name": "WrongBurnError"
-          },
-          {
-            "name": "WhitelistSizeLimitsExceeded"
-          }
-        ]
-      }
+      "code": 6000,
+      "name": "BucketDaoError",
+      "msg": "BucketDaoError"
+    },
+    {
+      "code": 6001,
+      "name": "WrongCollateralError",
+      "msg": "Tried to deposit wrong collateral"
+    },
+    {
+      "code": 6002,
+      "name": "WrongBurnError",
+      "msg": "Tried to burn wrong token"
     }
   ]
 };
@@ -309,12 +307,17 @@ export const IDL: BucketProgram = {
       "name": "createBucket",
       "accounts": [
         {
-          "name": "payer",
+          "name": "bucket",
           "isMut": true,
-          "isSigner": true
+          "isSigner": false
         },
         {
-          "name": "bucket",
+          "name": "crateMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "crateToken",
           "isMut": true,
           "isSigner": false
         },
@@ -329,14 +332,9 @@ export const IDL: BucketProgram = {
           "isSigner": false
         },
         {
-          "name": "crateMint",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "crateToken",
+          "name": "payer",
           "isMut": true,
-          "isSigner": false
+          "isSigner": true
         },
         {
           "name": "systemProgram",
@@ -372,11 +370,6 @@ export const IDL: BucketProgram = {
       "name": "authorizeCollateral",
       "accounts": [
         {
-          "name": "authority",
-          "isMut": false,
-          "isSigner": true
-        },
-        {
           "name": "bucket",
           "isMut": true,
           "isSigner": false
@@ -385,6 +378,11 @@ export const IDL: BucketProgram = {
           "name": "crateToken",
           "isMut": false,
           "isSigner": false
+        },
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true
         }
       ],
       "args": [
@@ -398,63 +396,58 @@ export const IDL: BucketProgram = {
       "name": "deposit",
       "accounts": [
         {
+          "name": "bucket",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "crateToken",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "crateMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "collateralReserve",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "crateTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "depositor",
           "isMut": false,
           "isSigner": true
         },
         {
-          "name": "common",
-          "accounts": [
-            {
-              "name": "bucket",
-              "isMut": false,
-              "isSigner": false
-            },
-            {
-              "name": "crateToken",
-              "isMut": false,
-              "isSigner": false
-            },
-            {
-              "name": "crateMint",
-              "isMut": true,
-              "isSigner": false
-            },
-            {
-              "name": "crateTokenProgram",
-              "isMut": false,
-              "isSigner": false
-            },
-            {
-              "name": "systemProgram",
-              "isMut": false,
-              "isSigner": false
-            },
-            {
-              "name": "tokenProgram",
-              "isMut": false,
-              "isSigner": false
-            }
-          ]
+          "name": "depositorSource",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "mintDestination",
+          "isMut": true,
+          "isSigner": false
         },
         {
           "name": "issueAuthority",
           "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "crateCollateral",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "depositorCollateral",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "depositorReserve",
-          "isMut": true,
           "isSigner": false
         }
       ],
@@ -469,53 +462,58 @@ export const IDL: BucketProgram = {
       "name": "redeem",
       "accounts": [
         {
+          "name": "bucket",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "crateToken",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "crateMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "collateralReserve",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "crateTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "withdrawer",
           "isMut": false,
           "isSigner": true
         },
         {
-          "name": "common",
-          "accounts": [
-            {
-              "name": "bucket",
-              "isMut": false,
-              "isSigner": false
-            },
-            {
-              "name": "crateToken",
-              "isMut": false,
-              "isSigner": false
-            },
-            {
-              "name": "crateMint",
-              "isMut": true,
-              "isSigner": false
-            },
-            {
-              "name": "crateTokenProgram",
-              "isMut": false,
-              "isSigner": false
-            },
-            {
-              "name": "systemProgram",
-              "isMut": false,
-              "isSigner": false
-            },
-            {
-              "name": "tokenProgram",
-              "isMut": false,
-              "isSigner": false
-            }
-          ]
+          "name": "withdrawerSource",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "withdrawDestination",
+          "isMut": true,
+          "isSigner": false
         },
         {
           "name": "withdrawAuthority",
           "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "withdrawerReserve",
-          "isMut": true,
           "isSigner": false
         }
       ],
@@ -528,6 +526,30 @@ export const IDL: BucketProgram = {
     }
   ],
   "accounts": [
+    {
+      "name": "issueAuthority",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "withdrawAuthority",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
     {
       "name": "bucket",
       "type": {
@@ -557,49 +579,23 @@ export const IDL: BucketProgram = {
           }
         ]
       }
-    },
-    {
-      "name": "issueAuthority",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "bump",
-            "type": "u8"
-          }
-        ]
-      }
-    },
-    {
-      "name": "withdrawAuthority",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "bump",
-            "type": "u8"
-          }
-        ]
-      }
     }
   ],
-  "types": [
+  "errors": [
     {
-      "name": "ErrorCode",
-      "type": {
-        "kind": "enum",
-        "variants": [
-          {
-            "name": "WrongCollateralError"
-          },
-          {
-            "name": "WrongBurnError"
-          },
-          {
-            "name": "WhitelistSizeLimitsExceeded"
-          }
-        ]
-      }
+      "code": 6000,
+      "name": "BucketDaoError",
+      "msg": "BucketDaoError"
+    },
+    {
+      "code": 6001,
+      "name": "WrongCollateralError",
+      "msg": "Tried to deposit wrong collateral"
+    },
+    {
+      "code": 6002,
+      "name": "WrongBurnError",
+      "msg": "Tried to burn wrong token"
     }
   ]
 };
