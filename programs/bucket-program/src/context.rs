@@ -1,14 +1,33 @@
 use {
-    crate::state::addresses::{IssueAuthority, WithdrawAuthority},
-    crate::state::bucket::Bucket,
     anchor_lang::prelude::*,
-    anchor_spl::token::{Mint, Token, TokenAccount},
+    crate::state::{
+        issue_authority::IssueAuthority,
+        withdraw_authority::WithdrawAuthority,
+        bucket::{
+            Bucket,
+            BUCKET_ACCOUNT_SPACE
+        },
+    },
+    anchor_spl::token::{
+        Burn,
+        Mint,
+        Transfer,
+        Token,
+        TokenAccount,
+    },
+    crate_token::cpi::accounts::{
+        Issue,
+        NewCrate,
+        Withdraw,
+    },
 };
 
-/// Accounts for [bucket-program::create_bucket].
 #[derive(Accounts)]
 pub struct CreateBucket<'info> {
-    /// Information about the [Bucket].
+    /// Initializing payer is the default authority
+    #[account(mut)]
+    pub payer: Signer<'info>,
+
     #[account(
         init,
         seeds = [
@@ -17,18 +36,11 @@ pub struct CreateBucket<'info> {
         ],
         bump,
         payer = payer,
-        space = 1024 // todo: determine space needed for whitelist
+        space = BUCKET_ACCOUNT_SPACE
     )]
     pub bucket: Account<'info, Bucket>,
 
-    /// [Mint] of the [crate_token::CrateToken].
-    pub crate_mint: Account<'info, Mint>,
-
-    #[account(mut)]
-    /// CHECK: unsafe account type, required for CPI invocation.
-    pub crate_token: UncheckedAccount<'info>,
-
-    /// This account's pubkey is set to `issue_authority`.
+    /// entity with authority to mint and issue new reserve tokens
     #[account(
         init,
         seeds = [
@@ -39,7 +51,7 @@ pub struct CreateBucket<'info> {
     )]
     pub issue_authority: Account<'info, IssueAuthority>,
 
-    /// This account's pubkey is set to `withdraw_authority`.
+    /// entity with authority to withdraw tokens from crate ATAs
     #[account(
         init,
         seeds = [
@@ -50,22 +62,25 @@ pub struct CreateBucket<'info> {
     )]
     pub withdraw_authority: Account<'info, WithdrawAuthority>,
 
-    /// Payer of the bucket initialization. Payer is default admin.
-    #[account(mut)]
-    pub payer: Signer<'info>,
+    /// Mint of the reserve token linked to the [crate_token::CrateToken]
+    pub crate_mint: Account<'info, Mint>,
 
-    /// System program.
+    /// PDA of the [crate_token::CrateToken] protocol. Must adhere to a specific PDA
+    /// address derivation, otherwise CPI call will fail. See source here:
+    /// https://github.com/CrateProtocol/crate/blob/master/programs/crate_token/src/lib.rs#L258-L267
+    /// CHECK: unsafe account type, required for CPI invocation.
+    #[account(mut)]
+    pub crate_token: UncheckedAccount<'info>,
+
     pub system_program: Program<'info, System>,
 
-    /// Crate token program.
     pub crate_token_program: Program<'info, crate_token::program::CrateToken>,
 }
 
-/// Accounts for [bucket-program::authorize_collateral].
 #[derive(Accounts)]
 pub struct AuthorizeCollateral<'info> {
-    // pub mint: Account<'info, Mint>,
-    /// Information about the [Bucket].
+    pub authority: Signer<'info>,
+
     #[account(
         mut,
         seeds = [
@@ -73,65 +88,20 @@ pub struct AuthorizeCollateral<'info> {
             crate_token.key().to_bytes().as_ref()
         ],
         bump,
-        // constraint = bucket.update_authority.key() == admin.key()
         has_one = authority
     )]
     pub bucket: Account<'info, Bucket>,
 
     /// CHECK: unsafe account type, required for CPI invocation.
     pub crate_token: UncheckedAccount<'info>,
-
-    /// Signer
-    pub authority: Signer<'info>,
 }
 
-/// Accounts for [bucket-program::deposit].
 #[derive(Accounts)]
 pub struct Deposit<'info> {
-    /// Information about the [Bucket].
-    #[account(
-            seeds = [
-                b"bucket".as_ref(),
-                crate_token.key().to_bytes().as_ref()
-            ],
-            bump,
-        )]
-    pub bucket: Box<Account<'info, Bucket>>,
-
-    /// System program.
-    pub system_program: Program<'info, System>,
-
-    /// Token program.
-    pub token_program: Program<'info, Token>,
-
-    // #[account(mut)]
-    /// CHECK: unsafe account type, required for CPI invocation.
-    pub crate_token: UncheckedAccount<'info>,
-
-    #[account(mut)]
-    /// [Mint] of the [crate_token::CrateToken].
-    pub crate_mint: Box<Account<'info, Mint>>,
-
-    /// [TokenAccount] holding the [Collateral] tokens of the [crate_token::CrateToken].
-    /// unique reserver per collateral mint
-    #[account(mut)]
-    pub collateral_reserve: Box<Account<'info, TokenAccount>>,
-
-    /// Crate token program.
-    pub crate_token_program: Program<'info, crate_token::program::CrateToken>,
-
-    /// User that deposits the whitelisted mint token
     pub depositor: Signer<'info>,
 
-    /// Source of the deposited [Collateral] tokens
-    #[account(mut)]
-    pub depositor_source: Box<Account<'info, TokenAccount>>,
+    pub common: Common<'info>,
 
-    /// Destination account that receives the issued token
-    #[account(mut)]
-    pub mint_destination: Box<Account<'info, TokenAccount>>,
-
-    /// This account's pubkey is set to `issue_authority`.
     #[account(
         seeds = [
             b"issue".as_ref()
@@ -139,45 +109,23 @@ pub struct Deposit<'info> {
         bump,
     )]
     pub issue_authority: Box<Account<'info, IssueAuthority>>,
+
+    #[account(mut)]
+    pub crate_collateral: Box<Account<'info, TokenAccount>>,
+
+    #[account(mut)]
+    pub depositor_collateral: Box<Account<'info, TokenAccount>>,
+
+    #[account(mut)]
+    pub depositor_reserve: Box<Account<'info, TokenAccount>>,
 }
 
-/// Accounts for [bucket-program::redeem].
 #[derive(Accounts)]
 pub struct Redeem<'info> {
-    /// Information about the [Bucket].
-    #[account(
-            seeds = [
-                b"bucket".as_ref(),
-                crate_token.key().to_bytes().as_ref()
-            ],
-            bump,
-        )]
-    pub bucket: Box<Account<'info, Bucket>>,
-
-    /// System program.
-    pub system_program: Program<'info, System>,
-
-    /// Token program.
-    pub token_program: Program<'info, Token>,
-
-    /// CHECK: unsafe account type, required for CPI invocation.
-    pub crate_token: UncheckedAccount<'info>,
-
-    /// [Mint] of the [crate_token::CrateToken].
-    #[account(mut)]
-    pub crate_mint: Box<Account<'info, Mint>>,
-
-    /// Crate token program.
-    pub crate_token_program: Program<'info, crate_token::program::CrateToken>,
-
-    /// User that deposits the whitelisted mint token
     pub withdrawer: Signer<'info>,
 
-    /// Source of the deposited [Collateral] tokens
-    #[account(mut)]
-    pub withdrawer_source: Box<Account<'info, TokenAccount>>,
+    pub common: Common<'info>,
 
-    /// This account's pubkey is set to `issue_authority`.
     #[account(
         seeds = [
             b"withdraw".as_ref()
@@ -185,31 +133,13 @@ pub struct Redeem<'info> {
         bump,
     )]
     pub withdraw_authority: Box<Account<'info, WithdrawAuthority>>,
-}
 
-/// Asset redeemed in [crate_redeem_in_kind::redeem].
-#[derive(Accounts)]
-pub struct RedeemAsset<'info> {
-    /// Crate account of the tokens
     #[account(mut)]
-    pub crate_underlying: Box<Account<'info, TokenAccount>>,
-
-    /// Destination of the tokens to redeem
-    #[account(mut)]
-    pub withdraw_destination: Box<Account<'info, TokenAccount>>,
-
-    /// Author fee token destination
-    #[account(mut)]
-    pub author_fee_destination: Box<Account<'info, TokenAccount>>,
-
-    /// Protocol fee token destination
-    #[account(mut)]
-    pub protocol_fee_destination: Box<Account<'info, TokenAccount>>,
+    pub withdrawer_reserve: Box<Account<'info, TokenAccount>>,
 }
 
 #[derive(Accounts)]
 pub struct Common<'info> {
-    /// Information about the [Bucket].
     #[account(
         seeds = [
             b"bucket".as_ref(),
@@ -219,24 +149,122 @@ pub struct Common<'info> {
     )]
     pub bucket: Account<'info, Bucket>,
 
-    /// System program.
-    pub system_program: Program<'info, System>,
-
-    /// Token program.
-    pub token_program: Program<'info, Token>,
-
-    #[account(mut)]
     /// CHECK: unsafe account type, required for CPI invocation.
     pub crate_token: UncheckedAccount<'info>,
 
-    /// [Mint] of the [crate_token::CrateToken].
+    #[account(mut)]
     pub crate_mint: Account<'info, Mint>,
 
-    /// [TokenAccount] holding the [Collateral] tokens of the [crate_token::CrateToken].
-    /// unique reserver per collateral mint
-    #[account(mut)]
-    pub collateral_reserve: Account<'info, TokenAccount>,
-
-    /// Crate token program.
     pub crate_token_program: Program<'info, crate_token::program::CrateToken>,
+
+    pub system_program: Program<'info, System>,
+
+    pub token_program: Program<'info, Token>,
+}
+
+#[derive(Accounts)]
+pub struct RedeemAsset<'info> {
+    #[account(mut)]
+    pub crate_collateral: Box<Account<'info, TokenAccount>>,
+
+    /// withdrawer collateral ATA
+    #[account(mut)]
+    pub withdraw_destination: Box<Account<'info, TokenAccount>>,
+
+    /// Author fee collateral ATA
+    #[account(mut)]
+    pub author_fee_destination: Box<Account<'info, TokenAccount>>,
+
+    /// Protocol fee collateral ATA
+    #[account(mut)]
+    pub protocol_fee_destination: Box<Account<'info, TokenAccount>>,
+}
+
+// ======================================
+// CPI CONTEXT TRANSFORMATIONS
+// ======================================
+
+impl<'info> CreateBucket<'info> {
+    pub fn into_new_crate_context(&self) -> CpiContext<'_, '_, '_, 'info, NewCrate<'info>> {
+        let cpi_program = self.crate_token_program.to_account_info();
+
+        let cpi_accounts = NewCrate {
+            crate_mint: self.crate_mint.to_account_info(),
+            crate_token: self.crate_token.to_account_info(),
+            fee_to_setter: self.bucket.to_account_info(),
+            fee_setter_authority: self.bucket.to_account_info(),
+            author_fee_to: self.bucket.to_account_info(),
+            issue_authority: self.issue_authority.to_account_info(),
+            withdraw_authority: self.withdraw_authority.to_account_info(),
+            payer: self.payer.to_account_info(),
+            system_program: self.system_program.to_account_info(),
+        };
+
+        CpiContext::new(cpi_program, cpi_accounts)
+    }
+}
+
+impl<'info> Deposit<'info> {
+    pub fn into_transfer_token_context(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+        let cpi_program = self.common.token_program.to_account_info();
+
+        let cpi_accounts = Transfer {
+            from: self.depositor_collateral.to_account_info(),
+            to: self.crate_collateral.to_account_info(),
+            authority: self.depositor.to_account_info(),
+        };
+
+        CpiContext::new(cpi_program, cpi_accounts)
+    }
+
+    pub fn into_issue_reserve_context(&self) -> CpiContext<'_, '_, '_, 'info, Issue<'info>> {
+        let cpi_program = self.common.crate_token_program.to_account_info();
+
+        // currently no author/protocol fees, so re-use depositor_reserve
+        let cpi_accounts = Issue {
+            crate_token: self.common.crate_token.to_account_info(),
+            crate_mint: self.common.crate_mint.to_account_info(),
+            issue_authority: self.issue_authority.to_account_info(),
+            mint_destination: self.depositor_reserve.to_account_info(),
+            author_fee_destination: self.depositor_reserve.to_account_info(),
+            protocol_fee_destination: self.depositor_reserve.to_account_info(),
+            token_program: self.common.token_program.to_account_info(),
+        };
+
+        CpiContext::new(cpi_program, cpi_accounts)
+    }
+}
+
+impl<'info> Redeem<'info> {
+
+    pub fn into_burn_reserve_token_context(&self) -> CpiContext<'_, '_, '_, 'info, Burn<'info>> {
+        let cpi_program = self.common.token_program.to_account_info();
+
+        let cpi_accounts = Burn {
+            mint: self.common.crate_mint.to_account_info(),
+            to: self.withdrawer_reserve.to_account_info(),
+            authority: self.withdrawer.to_account_info(),
+        };
+
+        CpiContext::new(cpi_program, cpi_accounts)
+    }
+
+    pub fn into_withdraw_collateral_context(
+        &self,
+        asset: RedeemAsset<'info>,
+    ) -> CpiContext<'_, '_, '_, 'info, Withdraw<'info>> {
+        let cpi_program = self.common.crate_token_program.to_account_info();
+
+        let cpi_accounts = Withdraw {
+            crate_token: self.common.crate_token.to_account_info(),
+            crate_underlying: asset.crate_collateral.to_account_info(),
+            withdraw_authority: self.withdraw_authority.to_account_info(),
+            withdraw_destination: asset.withdraw_destination.to_account_info(),
+            author_fee_destination: asset.author_fee_destination.to_account_info(),
+            protocol_fee_destination: asset.protocol_fee_destination.to_account_info(),
+            token_program: self.common.token_program.to_account_info(),
+        };
+
+        CpiContext::new(cpi_program, cpi_accounts)
+    }
 }

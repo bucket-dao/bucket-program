@@ -212,24 +212,26 @@ export class BucketClient extends AccountUtils {
 
     const crateCollateralATA = await this.getOrCreateATA(
       collateral,
-      crate, // or, bucket?
+      crate,
       signerInfo.payer,
       this.provider.connection
     );
 
     return this.bucketProgram.rpc.deposit(amount, {
       accounts: {
-        bucket,
-        crateToken: crate,
-        crateMint: reserve,
-        collateralReserve: crateCollateralATA.address,
-        depositor: signerInfo.payer,
-        depositorSource: depsitorCollateralATA.address,
-        mintDestination: depositorReserveATA.address,
+        common: {
+          bucket: bucket,
+          crateToken: crate,
+          crateMint: reserve,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          systemProgram: SystemProgram.programId,
+          crateTokenProgram: CRATE_ADDRESSES.CrateToken,
+        },
         issueAuthority: issueAuthority,
-        tokenProgram: TOKEN_PROGRAM_ID,
-        systemProgram: SystemProgram.programId,
-        crateTokenProgram: CRATE_ADDRESSES.CrateToken,
+        crateCollateral: crateCollateralATA.address,
+        depositor: signerInfo.payer,
+        depositorCollateral: depsitorCollateralATA.address,
+        depositorReserve: depositorReserveATA.address,
       },
       preInstructions: [
         ...(depsitorCollateralATA.instruction
@@ -315,15 +317,17 @@ export class BucketClient extends AccountUtils {
 
     return this.bucketProgram.rpc.redeem(amount, {
       accounts: {
-        bucket: bucket,
-        crateToken: crate,
-        crateMint: reserve,
-        withdrawer: signerInfo.payer,
-        withdrawerSource: withdrawerReserveATA.address,
+        common: {
+          bucket: bucket,
+          crateToken: crate,
+          crateMint: reserve,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          systemProgram: SystemProgram.programId,
+          crateTokenProgram: CRATE_ADDRESSES.CrateToken,
+        },
         withdrawAuthority: withdrawAuthority,
-        tokenProgram: TOKEN_PROGRAM_ID,
-        systemProgram: SystemProgram.programId,
-        crateTokenProgram: CRATE_ADDRESSES.CrateToken,
+        withdrawer: signerInfo.payer,
+        withdrawerReserve: withdrawerReserveATA.address,
       },
       remainingAccounts,
       preInstructions: createATAInstructions,

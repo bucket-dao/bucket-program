@@ -31,14 +31,21 @@ pub mod bucket_program {
         Ok(())
     }
 
-    pub fn authorize_collateral(ctx: Context<AuthorizeCollateral>, mint: Pubkey) -> ProgramResult {
+    pub fn authorize_collateral(
+        ctx: Context<AuthorizeCollateral>,
+        mint: Pubkey,
+    ) -> ProgramResult {
         instructions::authorize_collateral::handle(ctx, mint)?;
 
         Ok(())
     }
 
-    pub fn deposit(ctx: Context<Deposit>, deposit_amount: u64) -> ProgramResult {
+    pub fn deposit(
+        ctx: Context<Deposit>,
+        deposit_amount: u64,
+    ) -> ProgramResult {
         instructions::deposit::handle(ctx, deposit_amount)?;
+
         Ok(())
     }
 
@@ -47,6 +54,7 @@ pub mod bucket_program {
         withdraw_amount: u64,
     ) -> ProgramResult {
         instructions::redeem::handle(ctx, withdraw_amount)?;
+
         Ok(())
     }
 }

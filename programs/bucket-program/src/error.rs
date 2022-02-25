@@ -2,10 +2,10 @@ use anchor_lang::prelude::*;
 
 #[error]
 pub enum ErrorCode {
-    #[msg("BucketDaoError")]
-    BucketDaoError,
-    #[msg("Tried to deposit wrong collateral")]
+    #[msg("Must deposit an approved collateral mint")]
     WrongCollateralError,
-    #[msg("Tried to burn wrong token")]
+    #[msg("Must burn reserve token")]
     WrongBurnError,
+    #[msg("Whitelist size limits exceeded")]
+    WhitelistSizeLimitsExceeded,
 }
