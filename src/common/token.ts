@@ -13,7 +13,8 @@ import {
   TransactionInstruction,
 } from "@solana/web3.js";
 
-import { U64_ZERO } from "./util";
+import type { ATAResult, ATAsResult } from "./types";
+import { U64_ZERO } from "./types";
 
 export const findAssociatedTokenAddress = async (
   owner: PublicKey,
@@ -63,7 +64,7 @@ export const getOrCreateATA = async (
   owner: PublicKey,
   payer: PublicKey,
   conn: Connection
-) => {
+): Promise<ATAResult> => {
   const address = await findAssociatedTokenAddress(owner, mint);
   if (await conn.getAccountInfo(address)) {
     return { address, instruction: null };
@@ -78,6 +79,38 @@ export const getOrCreateATA = async (
       ),
     };
   }
+};
+
+export const getOrCreateATAs = async (
+  mints: PublicKey[],
+  owner: PublicKey,
+  payer: PublicKey,
+  conn: Connection
+): Promise<ATAsResult> => {
+  const atas: ATAsResult = {
+    addresses: {},
+    instructions: [],
+  };
+
+  for (const mint of mints) {
+    const address = await findAssociatedTokenAddress(owner, mint);
+    if (await conn.getAccountInfo(address)) {
+      atas.addresses[mint.toBase58()] = address;
+      atas.instructions.push(null);
+    } else {
+      atas.addresses[mint.toBase58()] = address;
+      atas.instructions.push(
+        createAssociatedTokenAccount(
+          mint,
+          address,
+          owner, // owner
+          payer // payer
+        )
+      );
+    }
+  }
+
+  return atas;
 };
 
 export const initTokenAccount = async (

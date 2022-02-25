@@ -186,11 +186,6 @@ export type BucketProgram = {
           isSigner: false;
         },
         {
-          name: "collateralReserve";
-          isMut: true;
-          isSigner: false;
-        },
-        {
           name: "crateTokenProgram";
           isMut: false;
           isSigner: false;
@@ -202,11 +197,6 @@ export type BucketProgram = {
         },
         {
           name: "withdrawerSource";
-          isMut: true;
-          isSigner: false;
-        },
-        {
-          name: "withdrawDestination";
           isMut: true;
           isSigner: false;
         },
@@ -280,21 +270,23 @@ export type BucketProgram = {
       };
     }
   ];
-  errors: [
+  types: [
     {
-      code: 6000;
-      name: "BucketDaoError";
-      msg: "BucketDaoError";
-    },
-    {
-      code: 6001;
-      name: "WrongCollateralError";
-      msg: "Tried to deposit wrong collateral";
-    },
-    {
-      code: 6002;
-      name: "WrongBurnError";
-      msg: "Tried to burn wrong token";
+      name: "ErrorCode";
+      type: {
+        kind: "enum";
+        variants: [
+          {
+            name: "BucketDaoError";
+          },
+          {
+            name: "WrongCollateralError";
+          },
+          {
+            name: "WrongBurnError";
+          }
+        ];
+      };
     }
   ];
 };
@@ -487,11 +479,6 @@ export const IDL: BucketProgram = {
           isSigner: false,
         },
         {
-          name: "collateralReserve",
-          isMut: true,
-          isSigner: false,
-        },
-        {
           name: "crateTokenProgram",
           isMut: false,
           isSigner: false,
@@ -503,11 +490,6 @@ export const IDL: BucketProgram = {
         },
         {
           name: "withdrawerSource",
-          isMut: true,
-          isSigner: false,
-        },
-        {
-          name: "withdrawDestination",
           isMut: true,
           isSigner: false,
         },
@@ -581,21 +563,23 @@ export const IDL: BucketProgram = {
       },
     },
   ],
-  errors: [
+  types: [
     {
-      code: 6000,
-      name: "BucketDaoError",
-      msg: "BucketDaoError",
-    },
-    {
-      code: 6001,
-      name: "WrongCollateralError",
-      msg: "Tried to deposit wrong collateral",
-    },
-    {
-      code: 6002,
-      name: "WrongBurnError",
-      msg: "Tried to burn wrong token",
+      name: "ErrorCode",
+      type: {
+        kind: "enum",
+        variants: [
+          {
+            name: "BucketDaoError",
+          },
+          {
+            name: "WrongCollateralError",
+          },
+          {
+            name: "WrongBurnError",
+          },
+        ],
+      },
     },
   ],
 };

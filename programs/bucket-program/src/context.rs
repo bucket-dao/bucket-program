@@ -167,11 +167,6 @@ pub struct Redeem<'info> {
     #[account(mut)]
     pub crate_mint: Box<Account<'info, Mint>>,
 
-    /// [TokenAccount] holding the [Collateral] tokens of the [crate_token::CrateToken].
-    /// unique reserver per collateral mint
-    #[account(mut)]
-    pub collateral_reserve: Box<Account<'info, TokenAccount>>,
-
     /// Crate token program.
     pub crate_token_program: Program<'info, crate_token::program::CrateToken>,
 
@@ -181,10 +176,6 @@ pub struct Redeem<'info> {
     /// Source of the deposited [Collateral] tokens
     #[account(mut)]
     pub withdrawer_source: Box<Account<'info, TokenAccount>>,
-
-    /// Destination account that receives the collateral token
-    #[account(mut)]
-    pub withdraw_destination: Box<Account<'info, TokenAccount>>,
 
     /// This account's pubkey is set to `issue_authority`.
     #[account(

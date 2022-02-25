@@ -7,12 +7,19 @@ import * as anchor from "@project-serum/anchor";
 import { Program, Provider } from "@project-serum/anchor";
 import type { u64 } from "@solana/spl-token";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
-import type { Connection, Keypair, PublicKey } from "@solana/web3.js";
+import type {
+  AccountMeta,
+  Connection,
+  Keypair,
+  PublicKey,
+  TransactionInstruction,
+} from "@solana/web3.js";
 import { SystemProgram } from "@solana/web3.js";
+import invariant from "tiny-invariant";
 
 import { AccountUtils } from "./common/account-utils";
-import type { SignerInfo } from "./common/util";
-import { getSignersFromPayer } from "./common/util";
+import type { SignerInfo } from "./common/types";
+import { addIxn, getSignersFromPayer } from "./common/util";
 import type { BucketProgram } from "./types/bucket_program";
 
 export class BucketClient extends AccountUtils {
@@ -242,7 +249,7 @@ export class BucketClient extends AccountUtils {
   redeem = async (
     amount: u64,
     reserve: PublicKey,
-    collateral: PublicKey,
+    collateralTokens: PublicKey[],
     bucket: PublicKey,
     crate: PublicKey,
     withdrawAuthority: PublicKey,
@@ -250,26 +257,60 @@ export class BucketClient extends AccountUtils {
   ) => {
     const signerInfo = getSignersFromPayer(withdrawer);
 
+    // these instructions ensure ATAs exist before transferring tokens to these
+    // accounts. otherwise, transaction will fail. it's possible that too many ixns
+    // packed into the same tx can result in tx failure.
+    const createATAInstructions: TransactionInstruction[] = [];
     const withdrawerReserveATA = await this.getOrCreateATA(
       reserve,
       signerInfo.payer,
       signerInfo.payer,
       this.provider.connection
     );
+    addIxn(withdrawerReserveATA.instruction, createATAInstructions);
 
-    // move to extra accounts when withdrawing multiple collateral mints
-    const withdrawerCollateralATA = await this.getOrCreateATA(
-      collateral,
+    const ownerATAs = await this.getOrCreateATAs(
+      collateralTokens,
       signerInfo.payer,
       signerInfo.payer,
       this.provider.connection
     );
+    ownerATAs.instructions.forEach((ixn) => addIxn(ixn, createATAInstructions));
 
-    const crateCollateralATA = await this.getOrCreateATA(
-      collateral,
+    const crateATAs = await this.getOrCreateATAs(
+      collateralTokens,
       crate,
       signerInfo.payer,
       this.provider.connection
+    );
+    crateATAs.instructions.forEach((ixn) => addIxn(ixn, createATAInstructions));
+
+    const remainingAccountKeys = ((): PublicKey[] => {
+      // no withdraw or protocol fees for now. refactor later to
+      // include more robust fee distribution.
+      return collateralTokens.flatMap((token) => {
+        const tokenAddress = token.toBase58();
+
+        const crateATA = (crateATAs.addresses as Record<string, PublicKey>)[
+          tokenAddress
+        ];
+        const ownerATA = (ownerATAs.addresses as Record<string, PublicKey>)[
+          tokenAddress
+        ];
+
+        invariant(ownerATA && crateATA, "missing ATA");
+
+        // use owner ATAs for the fees, since there are no fees
+        return [crateATA, ownerATA, ownerATA, ownerATA];
+      });
+    })();
+
+    const remainingAccounts = remainingAccountKeys.map(
+      (acc): AccountMeta => ({
+        pubkey: acc,
+        isSigner: false,
+        isWritable: true,
+      })
     );
 
     return this.bucketProgram.rpc.redeem(amount, {
@@ -277,26 +318,15 @@ export class BucketClient extends AccountUtils {
         bucket: bucket,
         crateToken: crate,
         crateMint: reserve,
-        collateralReserve: crateCollateralATA.address,
         withdrawer: signerInfo.payer,
         withdrawerSource: withdrawerReserveATA.address,
-        withdrawDestination: withdrawerCollateralATA.address,
         withdrawAuthority: withdrawAuthority,
         tokenProgram: TOKEN_PROGRAM_ID,
         systemProgram: SystemProgram.programId,
         crateTokenProgram: CRATE_ADDRESSES.CrateToken,
       },
-      preInstructions: [
-        ...(withdrawerReserveATA.instruction
-          ? [withdrawerReserveATA.instruction]
-          : []),
-        ...(withdrawerCollateralATA.instruction
-          ? [withdrawerCollateralATA.instruction]
-          : []),
-        ...(crateCollateralATA.instruction
-          ? [crateCollateralATA.instruction]
-          : []),
-      ],
+      remainingAccounts,
+      preInstructions: createATAInstructions,
       signers: signerInfo.signers,
     });
   };

@@ -9,6 +9,7 @@ import {
   createAssociatedTokenAccount as _createAssociatedTokenAccount,
   findAssociatedTokenAddress as _findAssociatedTokenAddress,
   getOrCreateATA as _getOrCreateATA,
+  getOrCreateATAs as _getOrCreateATAs,
   initTokenAccount as _initTokenAccount,
   mintTokens as _mintTokens,
 } from "./token";
@@ -57,4 +58,5 @@ export class AccountUtils {
   createAssociatedTokenAccount = _createAssociatedTokenAccount;
   initTokenAccount = _initTokenAccount;
   mintTokens = _mintTokens;
+  getOrCreateATAs = _getOrCreateATAs;
 }

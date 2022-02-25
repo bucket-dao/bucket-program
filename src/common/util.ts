@@ -1,13 +1,7 @@
-import { u64 } from "@solana/spl-token";
 import type { PublicKey } from "@solana/web3.js";
-import { Keypair } from "@solana/web3.js";
+import { Keypair, TransactionInstruction } from "@solana/web3.js";
 
-export const U64_ZERO = new u64(0);
-
-export interface SignerInfo {
-  payer: PublicKey;
-  signers: Keypair[];
-}
+import type { SignerInfo } from "./types";
 
 export function isKp(kp: PublicKey | Keypair) {
   return kp instanceof Keypair || "_keypair" in kp;
@@ -25,4 +19,13 @@ export const getSignersFromPayer = (payer: PublicKey | Keypair): SignerInfo => {
     payer: _payer,
     signers,
   } as SignerInfo;
+};
+
+export const addIxn = (
+  ixn: TransactionInstruction | null,
+  ixns: TransactionInstruction[]
+): void => {
+  if (ixn instanceof TransactionInstruction) {
+    ixns.push(ixn);
+  }
 };
