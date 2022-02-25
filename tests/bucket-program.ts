@@ -1,5 +1,4 @@
 import * as anchor from "@project-serum/anchor";
-import { BN } from "@project-serum/anchor";
 import { u64 } from "@solana/spl-token";
 import type { PublicKey } from "@solana/web3.js";
 import { Keypair, LAMPORTS_PER_SOL } from "@solana/web3.js";
@@ -115,28 +114,48 @@ describe("bucket-program", () => {
     );
 
     // fetch depositor & crate ATA balances after deposit
-    const crateCollateralAfter = await client.fetchTokenBalance(
-      collateral.publicKey,
-      crateKey
+    const depositorReserveAfter = await client.fetchTokenBalance(
+      reserve.publicKey,
+      depositorKeypair.publicKey
     );
-    expect(crateCollateralAfter).to.equal(depositAmount.toNumber());
-
     const depositorCollateralAfter = await client.fetchTokenBalance(
       collateral.publicKey,
       depositorKeypair.publicKey
     );
+
+    const crateCollateralAfter = await client.fetchTokenBalance(
+      collateral.publicKey,
+      crateKey
+    );
+
+    expect(depositorReserveAfter).to.equal(depositAmount.toNumber());
     expect(depositorCollateralAfter).to.equal(
       depositorCollateralBefore - depositAmount.toNumber()
     );
+    expect(crateCollateralAfter).to.equal(depositAmount.toNumber());
   });
 
   it("Redeem tokens", async () => {
+    // fetch withdrawer & crate ATA balances before redeem
     const depositorReserveAmount = await client.fetchTokenBalance(
       reserve.publicKey,
       depositorKeypair.publicKey
     );
 
-    const redeemAmount = new BN(depositorReserveAmount);
+    const withdrawerReserveBefore = await client.fetchTokenBalance(
+      reserve.publicKey,
+      depositorKeypair.publicKey
+    );
+
+    const withdrawerCollateralBefore = await client.fetchTokenBalance(
+      collateral.publicKey,
+      depositorKeypair.publicKey
+    );
+
+    expect(withdrawerReserveBefore).to.equal(depositorReserveAmount);
+    expect(withdrawerCollateralBefore).to.equal(0);
+
+    const redeemAmount = new u64(depositorReserveAmount);
     await client.redeem(
       redeemAmount,
       reserve.publicKey,
@@ -146,12 +165,25 @@ describe("bucket-program", () => {
       withdrawAuthority,
       depositorKeypair
     );
-    const userReserveAfter = await client.fetchTokenBalance(
+
+    // fetch withdrawer & crate ATA balances after redeem
+    const withdrawerReserveAfter = await client.fetchTokenBalance(
+      reserve.publicKey,
+      depositorKeypair.publicKey
+    );
+
+    const withdrawerCollateralAfter = await client.fetchTokenBalance(
       collateral.publicKey,
       depositorKeypair.publicKey
     );
-    expect(userReserveAfter).to.equal(0);
 
-    // verify other token accounts
+    const crateCollateralAfter = await client.fetchTokenBalance(
+      collateral.publicKey,
+      crateKey
+    );
+
+    expect(withdrawerReserveAfter).to.equal(0);
+    expect(withdrawerCollateralAfter).to.equal(redeemAmount.toNumber());
+    expect(crateCollateralAfter).to.equal(0);
   });
 });

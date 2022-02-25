@@ -2,9 +2,10 @@ import {
   CRATE_ADDRESSES,
   generateCrateAddress,
 } from "@crateprotocol/crate-sdk";
-import type { BN, Idl, Wallet } from "@project-serum/anchor";
+import type { Idl, Wallet } from "@project-serum/anchor";
 import * as anchor from "@project-serum/anchor";
 import { Program, Provider } from "@project-serum/anchor";
+import type { u64 } from "@solana/spl-token";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import type { Connection, Keypair, PublicKey } from "@solana/web3.js";
 import { SystemProgram } from "@solana/web3.js";
@@ -178,7 +179,7 @@ export class BucketClient extends AccountUtils {
   };
 
   deposit = async (
-    amount: BN,
+    amount: u64,
     reserve: PublicKey,
     collateral: PublicKey,
     bucket: PublicKey,
@@ -239,7 +240,7 @@ export class BucketClient extends AccountUtils {
   };
 
   redeem = async (
-    amount: BN,
+    amount: u64,
     reserve: PublicKey,
     collateral: PublicKey,
     bucket: PublicKey,
