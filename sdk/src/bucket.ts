@@ -2,25 +2,24 @@ import {
   CRATE_ADDRESSES,
   generateCrateAddress,
 } from "@crateprotocol/crate-sdk";
-import type { Idl, Wallet } from "@project-serum/anchor";
 import * as anchor from "@project-serum/anchor";
-import { Program, Provider } from "@project-serum/anchor";
-import type { u64 } from "@solana/spl-token";
+import { Program, Provider, Idl, Wallet } from "@project-serum/anchor";
+import { u64 } from "@solana/spl-token";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
-import type {
+import {
   AccountMeta,
   Connection,
   Keypair,
   PublicKey,
   TransactionInstruction,
+  SystemProgram
 } from "@solana/web3.js";
-import { SystemProgram } from "@solana/web3.js";
 import invariant from "tiny-invariant";
 
 import { AccountUtils } from "./common/account-utils";
-import type { SignerInfo } from "./common/types";
+import { SignerInfo } from "./common/types";
 import { addIxn, getSignersFromPayer } from "./common/util";
-import type { BucketProgram } from "./types/bucket_program";
+import { BucketProgram } from "./types/bucket_program";
 
 export class BucketClient extends AccountUtils {
   wallet: Wallet;

@@ -1,12 +1,11 @@
 import * as anchor from "@project-serum/anchor";
 import { u64 } from "@solana/spl-token";
-import type { PublicKey } from "@solana/web3.js";
-import { Keypair, LAMPORTS_PER_SOL } from "@solana/web3.js";
+import { Keypair, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 import { expect } from "chai";
 
-import { NodeWallet } from "../src/common/node-wallet";
-import { BucketClient } from "../src/index";
-import type { TokenBalance } from "./common/util";
+import { NodeWallet } from "../sdk/src/common/node-wallet";
+import { BucketClient } from "../sdk/src/index";
+import { TokenBalance } from "./common/util";
 import { executeTx, expectThrowsAsync } from "./common/util";
 
 describe("bucket-program", () => {

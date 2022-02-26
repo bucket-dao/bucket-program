@@ -1,10 +1,9 @@
 import { Wallet } from "@project-serum/anchor";
-import type { Cluster, Keypair } from "@solana/web3.js";
-import { clusterApiUrl, Connection } from "@solana/web3.js";
+import { clusterApiUrl, Connection, Cluster, Keypair } from "@solana/web3.js";
 import { program } from "commander";
 import log from "loglevel";
 
-import { BucketClient } from "../../src/bucket";
+import { BucketClient } from "@bucket-program/sdk";
 import { loadWalletKey } from "./helpers/account";
 
 program.version("0.0.1");

@@ -1,6 +1,7 @@
-import type { Wallet } from "@project-serum/anchor";
-import type { Connection, PublicKey } from "@solana/web3.js";
+import { Wallet } from "@project-serum/anchor";
 import {
+  Connection,
+  PublicKey,
   Keypair,
   sendAndConfirmTransaction,
   SystemProgram,

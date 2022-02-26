@@ -1,9 +1,9 @@
-import type {
+import {
   Connection,
   RpcResponseAndContext,
   TokenAmount,
+  PublicKey
 } from "@solana/web3.js";
-import { PublicKey } from "@solana/web3.js";
 
 import {
   createAssociatedTokenAccount as _createAssociatedTokenAccount,

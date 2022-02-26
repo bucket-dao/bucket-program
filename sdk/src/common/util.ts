@@ -1,7 +1,6 @@
-import type { PublicKey } from "@solana/web3.js";
-import { Keypair, TransactionInstruction } from "@solana/web3.js";
+import { Keypair, TransactionInstruction, PublicKey } from "@solana/web3.js";
 
-import type { SignerInfo } from "./types";
+import { SignerInfo } from "./types";
 
 export function isKp(kp: PublicKey | Keypair) {
   return kp instanceof Keypair || "_keypair" in kp;

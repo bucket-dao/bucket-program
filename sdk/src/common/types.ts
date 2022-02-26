@@ -1,5 +1,5 @@
 import { u64 } from "@solana/spl-token";
-import type {
+import {
   Keypair,
   PublicKey,
   TransactionInstruction,
@@ -19,5 +19,5 @@ export interface ATAResult {
 
 export interface ATAsResult {
   addresses: { [pubkey: string]: PublicKey };
-  instructions: TransactionInstruction[];
+  instructions: (TransactionInstruction | null)[];
 }

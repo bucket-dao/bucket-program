@@ -1,20 +1,19 @@
-import type { u64 } from "@solana/spl-token";
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   MintLayout,
   Token,
   TOKEN_PROGRAM_ID,
+  u64
 } from "@solana/spl-token";
-import type { Connection } from "@solana/web3.js";
 import {
   PublicKey,
   SystemProgram,
   SYSVAR_RENT_PUBKEY,
   TransactionInstruction,
+  Connection
 } from "@solana/web3.js";
 
-import type { ATAResult, ATAsResult } from "./types";
-import { U64_ZERO } from "./types";
+import { ATAResult, ATAsResult, U64_ZERO } from "./types";
 
 export const findAssociatedTokenAddress = async (
   owner: PublicKey,
@@ -147,7 +146,7 @@ export const mintTokens = async (
   payer: PublicKey,
   mint: PublicKey,
   mintAuthority: PublicKey,
-  freezeAuthority: PublicKey = null,
+  freezeAuthority: PublicKey | null = null,
   decimals = 6
 ): Promise<TransactionInstruction[]> => {
   return [
