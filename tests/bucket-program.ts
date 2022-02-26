@@ -3,10 +3,9 @@ import { u64 } from "@solana/spl-token";
 import { Keypair, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 import { expect } from "chai";
 
-import { NodeWallet } from "../sdk/src/common/node-wallet";
-import { BucketClient } from "../sdk/src/index";
 import { TokenBalance } from "./common/util";
-import { executeTx, expectThrowsAsync } from "./common/util";
+import { expectThrowsAsync } from "./common/util";
+import { BucketClient, executeTx, NodeWallet } from "../sdk/src/index";
 
 describe("bucket-program", () => {
   const _provider = anchor.Provider.env();
@@ -136,8 +135,6 @@ describe("bucket-program", () => {
         depositAmount,
         reserve.publicKey,
         collateralA.publicKey,
-        bucketKey,
-        crateKey,
         issueAuthority,
         userA
       )
@@ -148,47 +145,44 @@ describe("bucket-program", () => {
     // authorize collateral A
     await client.authorizeCollateral(
       collateralA.publicKey,
-      bucketKey,
-      crateKey,
+      reserve.publicKey,
       authority
     );
 
     // verify whitelist now has 1 collateral mint
-    let bucket = await client.fetchBucket(bucketKey);
-    let whitelist = bucket.whitelist as PublicKey[];
+    const { bucket: _bucketA, whitelist: whitelistA } =
+      await client.fetchBucket(bucketKey);
 
-    expect(whitelist.length).to.equal(1);
-    expect(whitelist[0].toBase58()).to.equal(collateralA.publicKey.toBase58());
+    expect(whitelistA.length).to.equal(1);
+    expect(whitelistA[0].toBase58()).to.equal(collateralA.publicKey.toBase58());
 
     // authorize collateral B
     await client.authorizeCollateral(
       collateralB.publicKey,
-      bucketKey,
-      crateKey,
+      reserve.publicKey,
       authority
     );
 
     // verify whitelist now has 2 collateral mints
-    bucket = await client.fetchBucket(bucketKey);
-    whitelist = bucket.whitelist as PublicKey[];
+    const { bucket: _bucketB, whitelist: whitelistB } =
+      await client.fetchBucket(bucketKey);
 
-    expect(whitelist.length).to.equal(2);
-    expect(whitelist[1].toBase58()).to.equal(collateralB.publicKey.toBase58());
+    expect(whitelistB.length).to.equal(2);
+    expect(whitelistB[1].toBase58()).to.equal(collateralB.publicKey.toBase58());
 
     // authorize collateral C
     await client.authorizeCollateral(
       collateralC.publicKey,
-      bucketKey,
-      crateKey,
+      reserve.publicKey,
       authority
     );
 
     // verify whitelist now has 3 collateral mints
-    bucket = await client.fetchBucket(bucketKey);
-    whitelist = bucket.whitelist as PublicKey[];
+    const { bucket: _bucketC, whitelist: whitelistC } =
+      await client.fetchBucket(bucketKey);
 
-    expect(whitelist.length).to.equal(3);
-    expect(whitelist[2].toBase58()).to.equal(collateralC.publicKey.toBase58());
+    expect(whitelistC.length).to.equal(3);
+    expect(whitelistC[2].toBase58()).to.equal(collateralC.publicKey.toBase58());
   });
 
   it("User A deposits authorized collateral A, issue reserve tokens", async () => {
@@ -207,8 +201,6 @@ describe("bucket-program", () => {
       depositAmount,
       reserve.publicKey,
       collateralA.publicKey,
-      bucketKey,
-      crateKey,
       issueAuthority,
       userA
     );
@@ -255,8 +247,6 @@ describe("bucket-program", () => {
       depositAmount,
       reserve.publicKey,
       collateralB.publicKey,
-      bucketKey,
-      crateKey,
       issueAuthority,
       userB
     );
@@ -292,13 +282,12 @@ describe("bucket-program", () => {
     );
     expect(userCCollateralBefore).to.equal(depositAmount.toNumber());
 
+    const depositAmountC = new u64(1_000_000);
     // user C deposits collateral C
     await client.deposit(
-      depositAmount,
+      depositAmountC,
       reserve.publicKey,
       collateralC.publicKey,
-      bucketKey,
-      crateKey,
       issueAuthority,
       userC
     );
@@ -319,11 +308,11 @@ describe("bucket-program", () => {
       crateKey
     );
 
-    expect(userCReserveAfter).to.equal(depositAmount.toNumber());
+    expect(userCReserveAfter).to.equal(depositAmountC.toNumber());
     expect(userCCollateralAfter).to.equal(
-      userCCollateralBefore - depositAmount.toNumber()
+      userCCollateralBefore - depositAmountC.toNumber()
     );
-    expect(crateCollateralCAfter).to.equal(depositAmount.toNumber());
+    expect(crateCollateralCAfter).to.equal(depositAmountC.toNumber());
   });
 
   it("Redeem tokens", async () => {
@@ -360,8 +349,6 @@ describe("bucket-program", () => {
       redeemAmount,
       reserve.publicKey,
       [collateralA.publicKey, collateralB.publicKey, collateralC.publicKey],
-      bucketKey,
-      crateKey,
       withdrawAuthority,
       userA
     );

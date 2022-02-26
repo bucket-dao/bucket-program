@@ -1,4 +1,11 @@
-import { Keypair, TransactionInstruction, PublicKey } from "@solana/web3.js";
+import {
+  Connection,
+  Keypair,
+  Transaction,
+  TransactionInstruction,
+  PublicKey,
+  sendAndConfirmTransaction,
+} from "@solana/web3.js";
 
 import { SignerInfo } from "./types";
 
@@ -27,4 +34,15 @@ export const addIxn = (
   if (ixn instanceof TransactionInstruction) {
     ixns.push(ixn);
   }
+};
+
+export const executeTx = async (
+  connection: Connection,
+  ixns: TransactionInstruction[],
+  signers: Keypair[]
+): Promise<string> => {
+  const tx = new Transaction();
+  ixns.forEach((ixn) => tx.add(ixn));
+
+  return await sendAndConfirmTransaction(connection, tx, signers);
 };

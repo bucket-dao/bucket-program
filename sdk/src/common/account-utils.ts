@@ -1,8 +1,9 @@
+import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import {
   Connection,
   RpcResponseAndContext,
   TokenAmount,
-  PublicKey
+  PublicKey,
 } from "@solana/web3.js";
 
 import {
@@ -51,6 +52,18 @@ export class AccountUtils {
     publicKey: PublicKey
   ): Promise<RpcResponseAndContext<TokenAmount>> => {
     return this.conn.getTokenAccountBalance(publicKey);
+  };
+
+  getTokenAccountsByOwner = async (owner: PublicKey) => {
+    return this.conn.getParsedTokenAccountsByOwner(owner, {
+      programId: TOKEN_PROGRAM_ID,
+    });
+  };
+
+  getTokenAccountByMint = async (owner: PublicKey, mint: PublicKey) => {
+    return this.conn.getParsedTokenAccountsByOwner(owner, {
+      mint: mint,
+    })[0];
   };
 
   findAssociatedTokenAddress = _findAssociatedTokenAddress;

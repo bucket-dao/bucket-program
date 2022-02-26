@@ -10,6 +10,7 @@ import {
 
 import { AccountUtils } from "./account-utils";
 
+// imported from (ty @ilmoi) https://github.com/gemworks/gem-farm/blob/main/src/gem-common/node-wallet.ts
 export class NodeWallet extends AccountUtils {
   wallet: Wallet; // instantiate with node wallet
 
