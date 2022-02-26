@@ -3,14 +3,14 @@ import {
   MintLayout,
   Token,
   TOKEN_PROGRAM_ID,
-  u64
+  u64,
 } from "@solana/spl-token";
 import {
   PublicKey,
   SystemProgram,
   SYSVAR_RENT_PUBKEY,
   TransactionInstruction,
-  Connection
+  Connection,
 } from "@solana/web3.js";
 
 import { ATAResult, ATAsResult, U64_ZERO } from "./types";

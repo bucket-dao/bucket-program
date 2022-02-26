@@ -10,14 +10,18 @@ import {
   AccountMeta,
   Connection,
   Keypair,
-  PublicKey,
   TransactionInstruction,
-  SystemProgram
+  SystemProgram,
+  PublicKey,
 } from "@solana/web3.js";
 import invariant from "tiny-invariant";
 
 import { AccountUtils } from "./common/account-utils";
-import { SignerInfo } from "./common/types";
+import {
+  ParsedTokenAccount,
+  SignerInfo,
+  PdaDerivationResult,
+} from "./common/types";
 import { addIxn, getSignersFromPayer } from "./common/util";
 import { BucketProgram } from "./types/bucket_program";
 
@@ -70,28 +74,52 @@ export class BucketClient extends AccountUtils {
   generateBucketAddress = async (
     mint: PublicKey,
     programID: PublicKey = this.bucketProgram.programId
-  ): Promise<[PublicKey, number]> => {
-    return this.findProgramAddress(programID, ["bucket", mint]);
+  ): Promise<PdaDerivationResult> => {
+    const [addr, bump] = await this.findProgramAddress(programID, [
+      "bucket",
+      mint,
+    ]);
+
+    return {
+      addr,
+      bump,
+    } as PdaDerivationResult;
   };
 
   generateIssueAuthority = async (
     programID: PublicKey = this.bucketProgram.programId
   ) => {
-    return this.findProgramAddress(programID, ["issue"]);
+    const [addr, bump] = await this.findProgramAddress(programID, ["issue"]);
+
+    return {
+      addr,
+      bump,
+    } as PdaDerivationResult;
   };
 
   generateWithdrawAuthority = async (
     programID: PublicKey = this.bucketProgram.programId
   ) => {
-    return this.findProgramAddress(programID, ["withdraw"]);
+    const [addr, bump] = await this.findProgramAddress(programID, ["withdraw"]);
+
+    return {
+      addr,
+      bump,
+    } as PdaDerivationResult;
   };
 
   // ================================================
   // Fetch & deserialize objects
   // ================================================
 
-  fetchBucket = async (bucket: PublicKey) => {
-    return this.bucketProgram.account.bucket.fetch(bucket);
+  fetchBucket = async (addr: PublicKey) => {
+    const bucket = await this.bucketProgram.account.bucket.fetch(addr);
+    const whitelist = bucket.whitelist as PublicKey[];
+
+    return {
+      bucket,
+      whitelist,
+    };
   };
 
   // ================================================
@@ -108,31 +136,109 @@ export class BucketClient extends AccountUtils {
     return +tokenBalance["value"]["amount"];
   };
 
+  fetchParsedTokenAccounts = async (
+    owner: PublicKey
+  ): Promise<ParsedTokenAccount[]> => {
+    const parsedTokenAccounts: ParsedTokenAccount[] = [];
+    const tokenAccounts = await this.getTokenAccountsByOwner(owner);
+
+    for (const tokenAccount of tokenAccounts.value) {
+      const amount = new u64(
+        +tokenAccount.account.data.parsed.info.tokenAmount.amount
+      );
+      const mint: PublicKey = new PublicKey(
+        tokenAccount.account.data.parsed.info.mint
+      );
+      const decimals: number =
+        tokenAccount.account.data.parsed.info.tokenAmount.decimals;
+
+      parsedTokenAccounts.push({
+        mint,
+        owner,
+        ata: tokenAccount.pubkey,
+        amount,
+        decimals,
+      } as ParsedTokenAccount);
+    }
+
+    return parsedTokenAccounts;
+  };
+
+  fetchParsedTokenAccountsByMints = async (
+    mints: PublicKey[],
+    owner: PublicKey
+  ): Promise<ParsedTokenAccount[]> => {
+    const parsedTokenAccounts: ParsedTokenAccount[] = [];
+    for (const mint of mints) {
+      const tokenAccount = await this.getTokenAccountByMint(owner, mint);
+      const amount = new u64(
+        +tokenAccount.account.data.parsed.info.tokenAmount.amount
+      );
+      const decimals: number =
+        tokenAccount.account.data.parsed.info.tokenAmount.decimals;
+
+      parsedTokenAccounts.push({
+        mint,
+        owner,
+        ata: tokenAccount.pubkey,
+        amount,
+        decimals,
+      } as ParsedTokenAccount);
+    }
+
+    return parsedTokenAccounts;
+  };
+
+  // given mints and token amount, we can additionally fetch overall supply and price to back into floating
+  // price of the reserve asset. this is only if price is a floating peg.
+  fetchParsedTokenAccountsForAuthorizedCollateral = async (
+    bucket: PublicKey | any, // how to specify bucket type from anchor types?
+    owner: PublicKey,
+    mints?: PublicKey[]
+  ) => {
+    const parsedTokenAccounts: ParsedTokenAccount[] = mints
+      ? await this.fetchParsedTokenAccountsByMints(mints, owner)
+      : await this.fetchParsedTokenAccounts(owner);
+
+    const { bucket: _bucket, whitelist } =
+      bucket instanceof PublicKey ? await this.fetchBucket(bucket) : bucket;
+
+    const _whitelist: string[] = whitelist.map((item: PublicKey) =>
+      item.toBase58()
+    );
+    return parsedTokenAccounts.filter((account) =>
+      _whitelist.includes(account.mint.toBase58())
+    );
+  };
+
   // ================================================
   // Smart contract function helpers
   // ================================================
 
   createBucket = async (
-    mint: Keypair,
+    reserve: Keypair,
     payer: PublicKey | Keypair,
     decimals = 6
   ) => {
-    const [crate, crateBump] = await generateCrateAddress(mint.publicKey);
-    const [bucket, bucketBump] = await this.generateBucketAddress(crate);
-    const [issueAuthority, issueBump] = await this.generateIssueAuthority();
-    const [withdrawAuthority, withdrawBump] =
+    const [crate, crateBump] = await generateCrateAddress(reserve.publicKey);
+    const { addr: bucket, bump: bucketBump } = await this.generateBucketAddress(
+      crate
+    );
+    const { addr: issueAuthority, bump: issueBump } =
+      await this.generateIssueAuthority();
+    const { addr: withdrawAuthority, bump: withdrawBump } =
       await this.generateWithdrawAuthority();
 
     const signerInfo = getSignersFromPayer(payer);
     const crateATA = await this.getOrCreateATA(
-      mint.publicKey,
+      reserve.publicKey,
       crate,
       signerInfo.payer,
       this.provider.connection
     );
 
     const accounts = {
-      crateMint: mint.publicKey,
+      crateMint: reserve.publicKey,
       payer: signerInfo.payer,
       bucket: bucket,
       crateToken: crate,
@@ -142,6 +248,8 @@ export class BucketClient extends AccountUtils {
       crateTokenProgram: CRATE_ADDRESSES.CrateToken,
     };
 
+    // new anchor versions do not require bumps, but we prefer to save bump
+    // valaues on the PDA.
     const tx = await this.bucketProgram.rpc.createBucket(
       bucketBump,
       crateBump,
@@ -153,14 +261,14 @@ export class BucketClient extends AccountUtils {
           ...(await this.mintTokens(
             this.provider.connection,
             signerInfo.payer,
-            mint.publicKey,
+            reserve.publicKey,
             crate,
             crate,
             decimals
           )),
           ...(crateATA.instruction ? [crateATA.instruction] : []),
         ],
-        signers: [mint, ...signerInfo.signers],
+        signers: [reserve, ...signerInfo.signers],
       }
     );
 
@@ -169,11 +277,14 @@ export class BucketClient extends AccountUtils {
 
   authorizeCollateral = async (
     collateral: PublicKey,
-    bucket: PublicKey,
-    crate: PublicKey,
+    reserve: PublicKey,
     payer: PublicKey | Keypair
   ) => {
     const signerInfo: SignerInfo = getSignersFromPayer(payer);
+
+    const [crate, _crateBump] = await generateCrateAddress(reserve);
+    const { addr: bucket } = await this.generateBucketAddress(crate);
+
     return this.bucketProgram.rpc.authorizeCollateral(collateral, {
       accounts: {
         bucket,
@@ -188,12 +299,13 @@ export class BucketClient extends AccountUtils {
     amount: u64,
     reserve: PublicKey,
     collateral: PublicKey,
-    bucket: PublicKey,
-    crate: PublicKey,
     issueAuthority: PublicKey,
     depositor: PublicKey | Keypair
   ) => {
     const signerInfo = getSignersFromPayer(depositor);
+
+    const [crate, _crateBump] = await generateCrateAddress(reserve);
+    const { addr: bucket } = await this.generateBucketAddress(crate);
 
     const depsitorCollateralATA = await this.getOrCreateATA(
       collateral,
@@ -251,12 +363,13 @@ export class BucketClient extends AccountUtils {
     amount: u64,
     reserve: PublicKey,
     collateralTokens: PublicKey[],
-    bucket: PublicKey,
-    crate: PublicKey,
     withdrawAuthority: PublicKey,
     withdrawer: PublicKey | Keypair
   ) => {
     const signerInfo = getSignersFromPayer(withdrawer);
+
+    const [crate, _crateBump] = await generateCrateAddress(reserve);
+    const { addr: bucket } = await this.generateBucketAddress(crate);
 
     // these instructions ensure ATAs exist before transferring tokens to these
     // accounts. otherwise, transaction will fail. it's possible that too many ixns
