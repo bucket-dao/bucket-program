@@ -11,10 +11,9 @@ wallet = "./tests/bucket_dao.json"
 [scripts]
 test = "ts-mocha -p ./tsconfig.json -t 1000000 tests/*.ts"
 
-[[test.genesis]]
+[test.validator]
+url = "devnet"
+[[test.validator.clone]]
 address = "CRATwLpu6YZEeiVq9ajjxs61wPQ9f29s1UoQR9siJCRs"
-program = "./tests/programs/crate_token.so"
-
-[[test.genesis]]
-address = "1NKyU3qShZC3oJgvCCftAHDi5TFxcJwfyUz2FeZsiwE"
-program = "./tests/programs/crate_redeem_in_kind.so"
+[[test.validator.clone]]
+address = "2mJek6wheo6gcWhgz4P1zEncyW3dzPNKhCSsW39S8aMq"
