@@ -36,3 +36,6 @@ app/out/
 
 # typescript
 **/*.tsbuildinfo
+
+# deploy output
+**/*.original
