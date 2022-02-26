@@ -22,6 +22,8 @@ use {
     },
 };
 
+/// if singleton (issue|withdraw) authority PDAs become problemtic,
+/// add additional seeds using either crate_token or crate_mint.
 #[derive(Accounts)]
 pub struct CreateBucket<'info> {
     /// Initializing payer is the default authority
@@ -104,7 +106,7 @@ pub struct Deposit<'info> {
 
     #[account(
         seeds = [
-            b"issue".as_ref()
+            b"issue".as_ref(),
         ],
         bump,
     )]
