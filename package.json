@@ -21,6 +21,7 @@
     "base58-encode": "^0.2.0",
     "big.js": "^6.1.1",
     "chai-as-promised": "^7.1.1",
+    "jsbi": "4.1.0",
     "prettier": "^2.5.1"
   },
   "devDependencies": {
