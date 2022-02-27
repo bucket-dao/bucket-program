@@ -43,7 +43,7 @@ if [ $update_flag -ne 1 ]; then
     for target in $targets
     do
         echo 'Replacing pk in ' $target
-        # sed -i'.original' -e "s/$existing_bucket_pk/$new_bucket_pk/g" $target
+        sed -i'.original' -e "s/$existing_bucket_pk/$new_bucket_pk/g" $target
     done
     echo Public key replaced!
 else

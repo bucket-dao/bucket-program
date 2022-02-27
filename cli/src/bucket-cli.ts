@@ -16,6 +16,7 @@ import { generateCrateAddress } from "@crateprotocol/crate-sdk";
 import { BucketClient } from "../../sdk/src/bucket";
 import { loadWalletKey } from "./helpers/account";
 import { executeTx } from "../../sdk/src/common/util";
+import { printParsedTokenAccount } from "../../sdk/src/common/types";
 
 program.version("0.0.1");
 log.setLevel("info");
@@ -34,14 +35,15 @@ programCommand("show_bucket")
       `Running command on ${env} with wallet ${walletKeyPair.publicKey.toString()}`
     );
 
+    const _mint = new PublicKey(mint);
     const _client = createClient(env, walletKeyPair);
-    const [crateAddr, crateBump] = await generateCrateAddress(mint);
+    const [crateAddr, crateBump] = await generateCrateAddress(_mint);
     const { addr: bucketAddr, bump: bucketBump } =
       await _client.generateBucketAddress(crateAddr);
     const { bucket, whitelist } = await _client.fetchBucket(bucketAddr);
 
     log.info("===========================================");
-    log.info("Bucket address:", crateAddr.toBase58());
+    log.info("Crate address:", crateAddr.toBase58());
     log.info("Crate bump:", crateBump);
     log.info("Bucket address:", bucketAddr.toBase58());
     log.info("Bucket bump:", bucketBump);
@@ -53,6 +55,42 @@ programCommand("show_bucket")
     log.info("Whitelist Contents... ");
     whitelist.forEach((el, idx) => log.info(`idx: ${idx}: ${el}`));
     log.info("===========================================");
+  });
+
+programCommand("get_ata_balances")
+  .option("-m, --mint <string>", "Reserve mint of the bucket")
+  .option(
+    "-a, --address <string>",
+    "Address of which we should check ATA balances"
+  )
+  .action(async (_, cmd) => {
+    const { keypair, env, mint, address } = cmd.opts();
+
+    const walletKeyPair: Keypair = loadWalletKey(keypair);
+    const _client = createClient(env, walletKeyPair);
+    const _mint = new PublicKey(mint);
+
+    const [crate, _bump] = await generateCrateAddress(_mint);
+    const { addr: bucket } = await _client.generateBucketAddress(crate);
+    const { whitelist } = await _client.fetchBucket(bucket);
+
+    const _address = address ? new PublicKey(address) : walletKeyPair.publicKey;
+
+    const parsedTokenAccounts = await _client.fetchParsedTokenAccountsByMints(
+      [...whitelist.map((el) => new PublicKey(el)), _mint],
+      _address
+    );
+
+    parsedTokenAccounts.forEach((account) => {
+      if (account.mint.toBase58() === mint) {
+        console.log("Reserve asset");
+      } else {
+        console.log("Collateral asset");
+      }
+
+      printParsedTokenAccount(account);
+      console.log();
+    });
   });
 
 // optionally allow someone to pass in a previoulsy minted token?
@@ -150,12 +188,14 @@ programCommand("authorize_collateral")
 
     const walletKeyPair: Keypair = loadWalletKey(keypair);
     const _client = createClient(env, walletKeyPair);
+    const _mint = new PublicKey(mint);
+    const _collateral = new PublicKey(collateral);
 
-    await _client.authorizeCollateral(collateral, mint, walletKeyPair);
+    await _client.authorizeCollateral(_collateral, _mint, walletKeyPair);
 
     log.info("===========================================");
     log.info(
-      `Authorized collateral mint [${collateral.toBase58()}] for reserve mint = [${mint.publicKey.toBase58()}]`
+      `Authorized collateral mint [${_collateral.toBase58()}] for reserve mint = [${_mint.toBase58()}]`
     );
     log.info("===========================================");
   });
@@ -175,13 +215,15 @@ programCommand("deposit")
 
     const { addr: crate } = await _client.generateIssueAuthority();
     const { addr: bucket } = await _client.generateBucketAddress(crate);
+    const _mint = new PublicKey(mint);
+    const _collateral = new PublicKey(collateral);
 
     const amountU64 = new u64(amount);
-    await _client.deposit(amountU64, mint, collateral, crate, walletKeyPair);
+    await _client.deposit(amountU64, _mint, _collateral, crate, walletKeyPair);
 
     log.info("===========================================");
     log.info(
-      `[${walletKeyPair.publicKey.toBase58()}] deposited ${amountU64.toNumber()} of collateral mint ${collateral.toBase58()} to bucket ${bucket.toBase58()}`
+      `[${walletKeyPair.publicKey.toBase58()}] deposited ${amountU64.toNumber()} of collateral mint ${_collateral.toBase58()} to bucket ${bucket.toBase58()}`
     );
     log.info("===========================================");
   });
@@ -197,14 +239,14 @@ programCommand("redeem")
     "CSV collateral mints to redeem. If not specified, we will try to redeem all underlying tokens."
   )
   .action(async (_, cmd) => {
-    const { keypair, env, mint, amount, collaterals } = cmd.opts();
+    const { keypair, env, mint, amount, collaterals, address } = cmd.opts();
 
     const walletKeyPair: Keypair = loadWalletKey(keypair);
     const _client = createClient(env, walletKeyPair);
+    const _mint = new PublicKey(mint);
 
-    const { addr: bucket } = await _client.generateBucketAddress(
-      await generateCrateAddress(mint)[0]
-    );
+    const [crate, _bump] = await generateCrateAddress(_mint);
+    const { addr: bucket } = await _client.generateBucketAddress(crate);
     const { addr: wAuthority } = await _client.generateWithdrawAuthority();
 
     // get authorized mints by bucket if not provided
@@ -213,23 +255,29 @@ programCommand("redeem")
       const { whitelist } = await _client.fetchBucket(bucket);
       _collaterals = whitelist.map((el) => new PublicKey(el));
     } else {
-      _collaterals = collaterals.map((col) => new PublicKey(col));
+      _collaterals = collaterals.split(",").map((col) => new PublicKey(col));
     }
 
     invariant(
-      _collaterals.length === 0,
+      _collaterals.length > 0,
       `No valid collateral mints supplied or found for bucket ${bucket.toBase58()}`
     );
 
     const amountU64 = new u64(amount);
     await _client.redeem(
       amountU64,
-      mint,
+      _mint,
       _collaterals,
       wAuthority,
       walletKeyPair
     );
 
+    log.info("===========================================");
+    log.info(
+      `[${walletKeyPair.publicKey.toBase58()}] redeemed ${amountU64.toNumber()} of collateral mints ${_collaterals.forEach(
+        (col) => console.log(col.toBase58(), ",")
+      )} to bucket ${bucket.toBase58()}`
+    );
     log.info("===========================================");
   });
 
@@ -250,7 +298,6 @@ function programCommand(name: string) {
       `Solana wallet location`,
       "--keypair not provided"
     );
-  // .option("-l, --log-level <string>", "log level", setLogLevel);
 }
 
 const createClient = (cluster: Cluster, keypair: Keypair) => {
@@ -261,13 +308,5 @@ const createClient = (cluster: Cluster, keypair: Keypair) => {
 
   return new BucketClient(new Connection(connection), new Wallet(keypair));
 };
-
-// const setLogLevel = (value: any, _prev: any) => {
-//     if (value === undefined || value === null) {
-//         return;
-//     }
-//     log.info("setting the log value to: ", value);
-//     log.setLevel(value);
-// };
 
 program.parse(process.argv);

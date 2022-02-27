@@ -62,8 +62,8 @@ export class AccountUtils {
 
   getTokenAccountByMint = async (owner: PublicKey, mint: PublicKey) => {
     return this.conn.getParsedTokenAccountsByOwner(owner, {
-      mint: mint,
-    })[0];
+      mint,
+    });
   };
 
   findAssociatedTokenAddress = _findAssociatedTokenAddress;

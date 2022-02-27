@@ -166,6 +166,9 @@ pub struct Common<'info> {
 
 #[derive(Accounts)]
 pub struct RedeemAsset<'info> {
+    /// Mint of the collateral to redeem
+    pub collateral_mint: Account<'info, Mint>,
+
     #[account(mut)]
     pub crate_collateral: Box<Account<'info, TokenAccount>>,
 

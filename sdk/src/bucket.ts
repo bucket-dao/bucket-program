@@ -171,16 +171,17 @@ export class BucketClient extends AccountUtils {
     const parsedTokenAccounts: ParsedTokenAccount[] = [];
     for (const mint of mints) {
       const tokenAccount = await this.getTokenAccountByMint(owner, mint);
+
       const amount = new u64(
-        +tokenAccount.account.data.parsed.info.tokenAmount.amount
+        +tokenAccount.value[0].account.data.parsed.info.tokenAmount.amount
       );
       const decimals: number =
-        tokenAccount.account.data.parsed.info.tokenAmount.decimals;
+        tokenAccount.value[0].account.data.parsed.info.tokenAmount.decimals;
 
       parsedTokenAccounts.push({
         mint,
         owner,
-        ata: tokenAccount.pubkey,
+        ata: tokenAccount.value[0].pubkey,
         amount,
         decimals,
       } as ParsedTokenAccount);
