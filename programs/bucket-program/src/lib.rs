@@ -7,7 +7,7 @@ mod state;
 
 use context::*;
 
-declare_id!("4c5Ef9CjxnXmkyc7WxQwNvA4wFWu7dw1sPCHoHxMh6CY");
+declare_id!("82xKp1KeQjH7FGXTPjmJ4U6VyhkFuvxZmCSTNPYogGjt");
 
 #[program]
 pub mod bucket_program {

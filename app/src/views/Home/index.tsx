@@ -6,7 +6,7 @@ import Swapview from "./Swapview";
 const Home: FC = ({}) => {
   const { publicKey } = useWallet();
   return (
-    <div>{publicKey ? <Swapview publicKey={publicKey} /> : <Overview />}</div>
+    <div>{publicKey ? <Swapview /> : <Overview />}</div>
   );
 };
 

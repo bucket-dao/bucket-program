@@ -280,23 +280,21 @@ export type BucketProgram = {
       }
     }
   ],
-  "types": [
+  "errors": [
     {
-      "name": "ErrorCode",
-      "type": {
-        "kind": "enum",
-        "variants": [
-          {
-            "name": "WrongCollateralError"
-          },
-          {
-            "name": "WrongBurnError"
-          },
-          {
-            "name": "WhitelistSizeLimitsExceeded"
-          }
-        ]
-      }
+      "code": 6000,
+      "name": "WrongCollateralError",
+      "msg": "Must deposit an approved collateral mint"
+    },
+    {
+      "code": 6001,
+      "name": "WrongBurnError",
+      "msg": "Must burn reserve token"
+    },
+    {
+      "code": 6002,
+      "name": "WhitelistSizeLimitsExceeded",
+      "msg": "Whitelist size limits exceeded"
     }
   ]
 };
@@ -583,23 +581,21 @@ export const IDL: BucketProgram = {
       }
     }
   ],
-  "types": [
+  "errors": [
     {
-      "name": "ErrorCode",
-      "type": {
-        "kind": "enum",
-        "variants": [
-          {
-            "name": "WrongCollateralError"
-          },
-          {
-            "name": "WrongBurnError"
-          },
-          {
-            "name": "WhitelistSizeLimitsExceeded"
-          }
-        ]
-      }
+      "code": 6000,
+      "name": "WrongCollateralError",
+      "msg": "Must deposit an approved collateral mint"
+    },
+    {
+      "code": 6001,
+      "name": "WrongBurnError",
+      "msg": "Must burn reserve token"
+    },
+    {
+      "code": 6002,
+      "name": "WhitelistSizeLimitsExceeded",
+      "msg": "Whitelist size limits exceeded"
     }
   ]
 };
