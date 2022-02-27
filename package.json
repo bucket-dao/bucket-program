@@ -2,8 +2,8 @@
   "scripts": {
     "setup": "sh ./scripts/setup.sh",
     "cp-idl": "./scripts/cp_idl.sh",
-    "deploy-devnet": "./scripts/deploy.sh devnet",
-    "deploy-mainnet": "./scripts/deploy.sh mainnet-beta",
+    "upgrade-devnet": "./scripts/deploy.sh 1 devnet",
+    "upgrade-mainnet": "./scripts/deploy.sh 1 mainnet-beta",
     "get-pk": "./scripts/get_pk.sh",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -21,7 +21,6 @@
     "base58-encode": "^0.2.0",
     "big.js": "^6.1.1",
     "chai-as-promised": "^7.1.1",
-    "jsbi": "^4.1.0",
     "prettier": "^2.5.1"
   },
   "devDependencies": {
