@@ -928,9 +928,9 @@ js-yaml@4.1.0:
   dependencies:
     argparse "^2.0.1"
 
-jsbi@^4.1.0:
+jsbi@4.1.0:
   version "4.1.0"
-  resolved "https://registry.npmjs.org/jsbi/-/jsbi-4.1.0.tgz"
+  resolved "https://registry.yarnpkg.com/jsbi/-/jsbi-4.1.0.tgz#f0c25ed8881bc09891334b03a3952efaa7add337"
   integrity sha512-384Z4keIsJtYpnVggsxaB255MZctILbxv+ihtwoWPF7KNOlYHn1LFpRnUw5qsAspUAA2+I7qzjVJxVYtHVjxNw==
 
 json-stringify-safe@^5.0.1:

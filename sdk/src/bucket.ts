@@ -416,7 +416,7 @@ export class BucketClient extends AccountUtils {
         invariant(ownerATA && crateATA, "missing ATA");
 
         // use owner ATAs for the fees, since there are no fees
-        return [crateATA, ownerATA, ownerATA, ownerATA];
+        return [token, crateATA, ownerATA, ownerATA, ownerATA];
       });
     })();
 

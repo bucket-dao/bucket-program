@@ -38,7 +38,7 @@ pub fn handle<'info>(
     let num_remaining_accounts = ctx.remaining_accounts.len();
 
     invariant!(
-        num_remaining_accounts % 4 == 0,
+        num_remaining_accounts % 5 == 0,
         "must have even number of tokens"
     );
 
@@ -51,13 +51,13 @@ pub fn handle<'info>(
     let withdraw_authority_signer_seeds: &[&[&[u8]]] =
         &[&[b"withdraw", &[ctx.accounts.withdraw_authority.bump]]];
 
-    let num_tokens = unwrap_int!(num_remaining_accounts.checked_div(4));
+    let num_tokens = unwrap_int!(num_remaining_accounts.checked_div(5));
     for _i in 0..num_tokens {
         // none of these accounts need to be validated further, since
         // [crate_token::cpi::withdraw] already handles it.
         let asset: RedeemAsset = Accounts::try_accounts(
             &crate::ID,
-            &mut next_account_infos(remaining_accounts_iter, 4)?,
+            &mut next_account_infos(remaining_accounts_iter, 5)?,
             &[],
         )?;
 
