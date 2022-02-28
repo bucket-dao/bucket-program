@@ -26,6 +26,11 @@
           "isSigner": false
         },
         {
+          "name": "rebalanceAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "crateMint",
           "isMut": false,
           "isSigner": false
@@ -66,6 +71,32 @@
       ]
     },
     {
+      "name": "updateRebalanceAuthority",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "bucket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "crateToken",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "rebalanceAuthority",
+          "type": "publicKey"
+        }
+      ]
+    },
+    {
       "name": "authorizeCollateral",
       "accounts": [
         {
@@ -88,6 +119,40 @@
         {
           "name": "mint",
           "type": "publicKey"
+        },
+        {
+          "name": "allocation",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "setCollateralAllocations",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "bucket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "crateToken",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "allocations",
+          "type": {
+            "vec": {
+              "defined": "Collateral"
+            }
+          }
         }
       ]
     },
@@ -142,6 +207,11 @@
         {
           "name": "crateCollateral",
           "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "collateralMint",
+          "isMut": false,
           "isSigner": false
         },
         {
@@ -247,9 +317,15 @@
             "type": "publicKey"
           },
           {
-            "name": "whitelist",
+            "name": "rebalanceAuthority",
+            "type": "publicKey"
+          },
+          {
+            "name": "collateral",
             "type": {
-              "vec": "publicKey"
+              "vec": {
+                "defined": "Collateral"
+              }
             }
           }
         ]
@@ -282,6 +358,22 @@
   ],
   "types": [
     {
+      "name": "Collateral",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "mint",
+            "type": "publicKey"
+          },
+          {
+            "name": "allocation",
+            "type": "u16"
+          }
+        ]
+      }
+    },
+    {
       "name": "ErrorCode",
       "type": {
         "kind": "enum",
@@ -290,10 +382,25 @@
             "name": "WrongCollateralError"
           },
           {
+            "name": "CollateralAlreadyAuthorizedError"
+          },
+          {
             "name": "WrongBurnError"
           },
           {
-            "name": "WhitelistSizeLimitsExceeded"
+            "name": "CollateralSizeLimitsExceeded"
+          },
+          {
+            "name": "AllocationBpsExceeded"
+          },
+          {
+            "name": "NumericalOverflowError"
+          },
+          {
+            "name": "NumericalUnderflowError"
+          },
+          {
+            "name": "NumericalDivisionError"
           }
         ]
       }

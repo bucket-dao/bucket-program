@@ -40,7 +40,7 @@ programCommand("show_bucket")
     const [crateAddr, crateBump] = await generateCrateAddress(_mint);
     const { addr: bucketAddr, bump: bucketBump } =
       await _client.generateBucketAddress(crateAddr);
-    const { bucket, whitelist } = await _client.fetchBucket(bucketAddr);
+    const { bucket, collateral } = await _client.fetchBucket(bucketAddr);
 
     log.info("===========================================");
     log.info("Crate address:", crateAddr.toBase58());
@@ -51,9 +51,9 @@ programCommand("show_bucket")
     log.info("Crate token (PDA):", bucket.crateToken.toBase58());
     log.info("Crate mint (reserve):", bucket.crateMint.toBase58());
     log.info("Authority:", bucket.authority.toBase58());
-    log.info("Whitelist size: ", whitelist.length);
-    log.info("Whitelist Contents... ");
-    whitelist.forEach((el, idx) => log.info(`idx: ${idx}: ${el}`));
+    log.info("Collateral size: ", collateral.length);
+    log.info("Collateral Contents... ");
+    collateral.forEach((el, idx) => log.info(`idx: ${idx}: ${el}`));
     log.info("===========================================");
   });
 
@@ -72,12 +72,12 @@ programCommand("get_ata_balances")
 
     const [crate, _bump] = await generateCrateAddress(_mint);
     const { addr: bucket } = await _client.generateBucketAddress(crate);
-    const { whitelist } = await _client.fetchBucket(bucket);
+    const { collateral } = await _client.fetchBucket(bucket);
 
     const _address = address ? new PublicKey(address) : walletKeyPair.publicKey;
 
     const parsedTokenAccounts = await _client.fetchParsedTokenAccountsByMints(
-      [...whitelist.map((el) => new PublicKey(el)), _mint],
+      [...collateral.map((el) => new PublicKey(el)), _mint],
       _address
     );
 
@@ -183,15 +183,16 @@ programCommand("mint_tokens_to")
 programCommand("authorize_collateral")
   .option("-m, --mint <string>", "Reserve mint of the bucket")
   .option("-c, --collateral <string>", "Collateral mint to authorize")
+  .option("-a, --allocation <number>", "Collateral mint's allocation")
   .action(async (_, cmd) => {
-    const { keypair, env, mint, collateral } = cmd.opts();
+    const { keypair, env, mint, collateral, allocation } = cmd.opts();
 
     const walletKeyPair: Keypair = loadWalletKey(keypair);
     const _client = createClient(env, walletKeyPair);
     const _mint = new PublicKey(mint);
     const _collateral = new PublicKey(collateral);
 
-    await _client.authorizeCollateral(_collateral, _mint, walletKeyPair);
+    await _client.authorizeCollateral(_collateral, +allocation, _mint, walletKeyPair);
 
     log.info("===========================================");
     log.info(
@@ -252,10 +253,17 @@ programCommand("redeem")
     // get authorized mints by bucket if not provided
     let _collaterals: PublicKey[] = [];
     if (collaterals === undefined) {
-      const { whitelist } = await _client.fetchBucket(bucket);
-      _collaterals = whitelist.map((el) => new PublicKey(el));
+      const { collateral } = await _client.fetchBucket(bucket);
+      _collaterals = collateral.map((el) => new PublicKey(el));
     } else {
-      _collaterals = collaterals.split(",").map((col) => new PublicKey(col));
+      // filter out duplicates; this logic is not necessary in the case where we
+      // fetch mints from on-chain because we don't allow duplicate mints in the
+      // authorized collateral list.
+      const splitCollaterals = collaterals
+        .split(",")
+        .map(el => el.replace(/\s/g, ""));
+      _collaterals = Array.from(new Set(splitCollaterals))
+        .map(el => new PublicKey(el));
     }
 
     invariant(
