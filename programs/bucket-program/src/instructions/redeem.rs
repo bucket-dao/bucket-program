@@ -85,6 +85,7 @@ pub fn handle<'info>(
     let withdraw_authority_signer_seeds: &[&[&[u8]]] =
         &[&[b"withdraw", &[ctx.accounts.withdraw_authority.bump]]];
 
+    let num_tokens = unwrap_int!(num_remaining_accounts.checked_div(5));
     for _i in 0..num_tokens {
         // none of these accounts need to be validated further, since
         // [crate_token::cpi::withdraw] already handles it.

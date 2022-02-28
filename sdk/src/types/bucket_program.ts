@@ -26,6 +26,11 @@ export type BucketProgram = {
           "isSigner": false
         },
         {
+          "name": "rebalanceAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "crateMint",
           "isMut": false,
           "isSigner": false
@@ -66,6 +71,32 @@ export type BucketProgram = {
       ]
     },
     {
+      "name": "updateRebalanceAuthority",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "bucket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "crateToken",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "rebalanceAuthority",
+          "type": "publicKey"
+        }
+      ]
+    },
+    {
       "name": "authorizeCollateral",
       "accounts": [
         {
@@ -88,6 +119,40 @@ export type BucketProgram = {
         {
           "name": "mint",
           "type": "publicKey"
+        },
+        {
+          "name": "allocation",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "setCollateralAllocations",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "bucket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "crateToken",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "allocations",
+          "type": {
+            "vec": {
+              "defined": "Collateral"
+            }
+          }
         }
       ]
     },
@@ -145,6 +210,11 @@ export type BucketProgram = {
           "isSigner": false
         },
         {
+          "name": "collateralMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "depositorCollateral",
           "isMut": true,
           "isSigner": false
@@ -153,14 +223,11 @@ export type BucketProgram = {
           "name": "depositorReserve",
           "isMut": true,
           "isSigner": false
-<<<<<<< Updated upstream:sdk/src/types/bucket_program.ts
-=======
         },
         {
           "name": "oracle",
           "isMut": false,
           "isSigner": false
->>>>>>> Stashed changes:sdk/src/types/types/bucket_program.ts
         }
       ],
       "args": [
@@ -175,54 +242,6 @@ export type BucketProgram = {
       "accounts": [
         {
           "name": "withdrawer",
-<<<<<<< Updated upstream:sdk/src/types/bucket_program.ts
-          "isMut": false,
-          "isSigner": true
-        },
-        {
-          "name": "common",
-          "accounts": [
-            {
-              "name": "bucket",
-              "isMut": false,
-              "isSigner": false
-            },
-            {
-              "name": "crateToken",
-              "isMut": false,
-              "isSigner": false
-            },
-            {
-              "name": "crateMint",
-              "isMut": true,
-              "isSigner": false
-            },
-            {
-              "name": "crateTokenProgram",
-              "isMut": false,
-              "isSigner": false
-            },
-            {
-              "name": "systemProgram",
-              "isMut": false,
-              "isSigner": false
-            },
-            {
-              "name": "tokenProgram",
-              "isMut": false,
-              "isSigner": false
-            }
-          ]
-        },
-        {
-          "name": "withdrawAuthority",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "withdrawerReserve",
-          "isMut": true,
-=======
           "isMut": false,
           "isSigner": true
         },
@@ -274,7 +293,6 @@ export type BucketProgram = {
         {
           "name": "oracle",
           "isMut": false,
->>>>>>> Stashed changes:sdk/src/types/types/bucket_program.ts
           "isSigner": false
         }
       ],
@@ -309,9 +327,15 @@ export type BucketProgram = {
             "type": "publicKey"
           },
           {
-            "name": "whitelist",
+            "name": "rebalanceAuthority",
+            "type": "publicKey"
+          },
+          {
+            "name": "collateral",
             "type": {
-              "vec": "publicKey"
+              "vec": {
+                "defined": "Collateral"
+              }
             }
           }
         ]
@@ -337,14 +361,60 @@ export type BucketProgram = {
           {
             "name": "bump",
             "type": "u8"
-<<<<<<< Updated upstream:sdk/src/types/bucket_program.ts
-=======
           }
         ]
       }
     }
   ],
   "types": [
+    {
+      "name": "Collateral",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "mint",
+            "type": "publicKey"
+          },
+          {
+            "name": "allocation",
+            "type": "u16"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ErrorCode",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "WrongBurnError"
+          },
+          {
+            "name": "AllocationBpsExceeded"
+          },
+          {
+            "name": "WrongCollateralError"
+          },
+          {
+            "name": "CollateralAlreadyAuthorizedError"
+          },
+          {
+            "name": "CollateralSizeLimitsExceeded"
+          },
+          {
+            "name": "NumericalUnderflowError"
+          },
+          {
+            "name": "NumericalOverflowError"
+          },
+          {
+            "name": "NumericalDivisionError"
+          }
+        ]
+      }
+    },
     {
       "name": "PriceStatus",
       "type": {
@@ -392,27 +462,9 @@ export type BucketProgram = {
           },
           {
             "name": "Volatility"
->>>>>>> Stashed changes:sdk/src/types/types/bucket_program.ts
           }
         ]
       }
-    }
-  ],
-  "errors": [
-    {
-      "code": 6000,
-      "name": "WrongCollateralError",
-      "msg": "Must deposit an approved collateral mint"
-    },
-    {
-      "code": 6001,
-      "name": "WrongBurnError",
-      "msg": "Must burn reserve token"
-    },
-    {
-      "code": 6002,
-      "name": "WhitelistSizeLimitsExceeded",
-      "msg": "Whitelist size limits exceeded"
     }
   ]
 };
@@ -445,6 +497,11 @@ export const IDL: BucketProgram = {
           "isSigner": false
         },
         {
+          "name": "rebalanceAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "crateMint",
           "isMut": false,
           "isSigner": false
@@ -485,6 +542,32 @@ export const IDL: BucketProgram = {
       ]
     },
     {
+      "name": "updateRebalanceAuthority",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "bucket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "crateToken",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "rebalanceAuthority",
+          "type": "publicKey"
+        }
+      ]
+    },
+    {
       "name": "authorizeCollateral",
       "accounts": [
         {
@@ -507,6 +590,40 @@ export const IDL: BucketProgram = {
         {
           "name": "mint",
           "type": "publicKey"
+        },
+        {
+          "name": "allocation",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "setCollateralAllocations",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "bucket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "crateToken",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "allocations",
+          "type": {
+            "vec": {
+              "defined": "Collateral"
+            }
+          }
         }
       ]
     },
@@ -564,6 +681,11 @@ export const IDL: BucketProgram = {
           "isSigner": false
         },
         {
+          "name": "collateralMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "depositorCollateral",
           "isMut": true,
           "isSigner": false
@@ -572,14 +694,11 @@ export const IDL: BucketProgram = {
           "name": "depositorReserve",
           "isMut": true,
           "isSigner": false
-<<<<<<< Updated upstream:sdk/src/types/bucket_program.ts
-=======
         },
         {
           "name": "oracle",
           "isMut": false,
           "isSigner": false
->>>>>>> Stashed changes:sdk/src/types/types/bucket_program.ts
         }
       ],
       "args": [
@@ -594,54 +713,6 @@ export const IDL: BucketProgram = {
       "accounts": [
         {
           "name": "withdrawer",
-<<<<<<< Updated upstream:sdk/src/types/bucket_program.ts
-          "isMut": false,
-          "isSigner": true
-        },
-        {
-          "name": "common",
-          "accounts": [
-            {
-              "name": "bucket",
-              "isMut": false,
-              "isSigner": false
-            },
-            {
-              "name": "crateToken",
-              "isMut": false,
-              "isSigner": false
-            },
-            {
-              "name": "crateMint",
-              "isMut": true,
-              "isSigner": false
-            },
-            {
-              "name": "crateTokenProgram",
-              "isMut": false,
-              "isSigner": false
-            },
-            {
-              "name": "systemProgram",
-              "isMut": false,
-              "isSigner": false
-            },
-            {
-              "name": "tokenProgram",
-              "isMut": false,
-              "isSigner": false
-            }
-          ]
-        },
-        {
-          "name": "withdrawAuthority",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "withdrawerReserve",
-          "isMut": true,
-=======
           "isMut": false,
           "isSigner": true
         },
@@ -693,7 +764,6 @@ export const IDL: BucketProgram = {
         {
           "name": "oracle",
           "isMut": false,
->>>>>>> Stashed changes:sdk/src/types/types/bucket_program.ts
           "isSigner": false
         }
       ],
@@ -728,9 +798,15 @@ export const IDL: BucketProgram = {
             "type": "publicKey"
           },
           {
-            "name": "whitelist",
+            "name": "rebalanceAuthority",
+            "type": "publicKey"
+          },
+          {
+            "name": "collateral",
             "type": {
-              "vec": "publicKey"
+              "vec": {
+                "defined": "Collateral"
+              }
             }
           }
         ]
@@ -756,14 +832,60 @@ export const IDL: BucketProgram = {
           {
             "name": "bump",
             "type": "u8"
-<<<<<<< Updated upstream:sdk/src/types/bucket_program.ts
-=======
           }
         ]
       }
     }
   ],
   "types": [
+    {
+      "name": "Collateral",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "mint",
+            "type": "publicKey"
+          },
+          {
+            "name": "allocation",
+            "type": "u16"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ErrorCode",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "WrongBurnError"
+          },
+          {
+            "name": "AllocationBpsExceeded"
+          },
+          {
+            "name": "WrongCollateralError"
+          },
+          {
+            "name": "CollateralAlreadyAuthorizedError"
+          },
+          {
+            "name": "CollateralSizeLimitsExceeded"
+          },
+          {
+            "name": "NumericalUnderflowError"
+          },
+          {
+            "name": "NumericalOverflowError"
+          },
+          {
+            "name": "NumericalDivisionError"
+          }
+        ]
+      }
+    },
     {
       "name": "PriceStatus",
       "type": {
@@ -811,27 +933,9 @@ export const IDL: BucketProgram = {
           },
           {
             "name": "Volatility"
->>>>>>> Stashed changes:sdk/src/types/types/bucket_program.ts
           }
         ]
       }
-    }
-  ],
-  "errors": [
-    {
-      "code": 6000,
-      "name": "WrongCollateralError",
-      "msg": "Must deposit an approved collateral mint"
-    },
-    {
-      "code": 6001,
-      "name": "WrongBurnError",
-      "msg": "Must burn reserve token"
-    },
-    {
-      "code": 6002,
-      "name": "WhitelistSizeLimitsExceeded",
-      "msg": "Whitelist size limits exceeded"
     }
   ]
 };

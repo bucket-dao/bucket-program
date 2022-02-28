@@ -47,12 +47,14 @@ pub mod pyth {
 
 #[derive(Accounts)]
 pub struct SetPrice<'info> {
+    /// CHECK
     #[account(mut)]
     pub price: AccountInfo<'info>,
 }
 
 #[derive(Accounts)]
 pub struct Initialize<'info> {
+    /// CHECK
     #[account(mut)]
     pub price: AccountInfo<'info>,
 }

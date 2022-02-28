@@ -26,6 +26,14 @@ export interface ParsedTokenAccount {
   decimals: number;
 }
 
+export const printParsedTokenAccount = (account: ParsedTokenAccount) => {
+  console.log('mint: ', account.mint.toBase58());
+  console.log('owner: ', account.owner.toBase58());
+  console.log('ata: ', account.mint.toBase58());
+  console.log('amount: ', account.amount.toNumber());
+  console.log('decimals: ', account.decimals);
+}
+
 export interface PdaDerivationResult {
   addr: PublicKey;
   bump: number;

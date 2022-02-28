@@ -25,6 +25,11 @@ import {
 import { addIxn, getSignersFromPayer } from "./common/util";
 import { BucketProgram } from "./types/bucket_program";
 
+export interface Collateral {
+  mint: PublicKey;
+  allocation: number;
+}
+
 export class BucketClient extends AccountUtils {
   wallet: Wallet;
   provider!: Provider;
@@ -54,6 +59,7 @@ export class BucketClient extends AccountUtils {
   setBucketProgram = (idl?: Idl, programId?: PublicKey) => {
     // instantiating program depends on the environment
     if (idl && programId) {
+      console.log("idl: ", idl);
       // means running in prod
       this.bucketProgram = new Program<BucketProgram>(
         idl as any,
@@ -114,11 +120,11 @@ export class BucketClient extends AccountUtils {
 
   fetchBucket = async (addr: PublicKey) => {
     const bucket = await this.bucketProgram.account.bucket.fetch(addr);
-    const whitelist = bucket.whitelist as PublicKey[];
+    const collateral = bucket.collateral as Collateral[];
 
     return {
       bucket,
-      whitelist,
+      collateral,
     };
   };
 
@@ -171,16 +177,17 @@ export class BucketClient extends AccountUtils {
     const parsedTokenAccounts: ParsedTokenAccount[] = [];
     for (const mint of mints) {
       const tokenAccount = await this.getTokenAccountByMint(owner, mint);
+
       const amount = new u64(
-        +tokenAccount.account.data.parsed.info.tokenAmount.amount
+        +tokenAccount.value[0].account.data.parsed.info.tokenAmount.amount
       );
       const decimals: number =
-        tokenAccount.account.data.parsed.info.tokenAmount.decimals;
+        tokenAccount.value[0].account.data.parsed.info.tokenAmount.decimals;
 
       parsedTokenAccounts.push({
         mint,
         owner,
-        ata: tokenAccount.pubkey,
+        ata: tokenAccount.value[0].pubkey,
         amount,
         decimals,
       } as ParsedTokenAccount);
@@ -200,14 +207,14 @@ export class BucketClient extends AccountUtils {
       ? await this.fetchParsedTokenAccountsByMints(mints, owner)
       : await this.fetchParsedTokenAccounts(owner);
 
-    const { bucket: _bucket, whitelist } =
+    const { bucket: _bucket, collateral } =
       bucket instanceof PublicKey ? await this.fetchBucket(bucket) : bucket;
 
-    const _whitelist: string[] = whitelist.map((item: PublicKey) =>
+    const _collateral: string[] = collateral.map((item: PublicKey) =>
       item.toBase58()
     );
     return parsedTokenAccounts.filter((account) =>
-      _whitelist.includes(account.mint.toBase58())
+      _collateral.includes(account.mint.toBase58())
     );
   };
 
@@ -244,6 +251,9 @@ export class BucketClient extends AccountUtils {
       crateToken: crate,
       issueAuthority,
       withdrawAuthority,
+      // defaults to original creator. this entity has the ability
+      // to update the value later.
+      rebalanceAuthority: signerInfo.payer,
       systemProgram: SystemProgram.programId,
       crateTokenProgram: CRATE_ADDRESSES.CrateToken,
     };
@@ -275,9 +285,9 @@ export class BucketClient extends AccountUtils {
     return { tx, ...accounts };
   };
 
-  authorizeCollateral = async (
-    collateral: PublicKey,
+  updateRebalanceAuthority = async (
     reserve: PublicKey,
+    rebalanceAuthority: PublicKey,
     payer: PublicKey | Keypair
   ) => {
     const signerInfo: SignerInfo = getSignersFromPayer(payer);
@@ -285,13 +295,39 @@ export class BucketClient extends AccountUtils {
     const [crate, _crateBump] = await generateCrateAddress(reserve);
     const { addr: bucket } = await this.generateBucketAddress(crate);
 
-    return this.bucketProgram.rpc.authorizeCollateral(collateral, {
+    console.log('rebalanceAuthority: ', rebalanceAuthority.toBase58());
+    return this.bucketProgram.rpc.updateRebalanceAuthority(
+      rebalanceAuthority, {
       accounts: {
         bucket,
         crateToken: crate,
         authority: signerInfo.payer,
       },
-      signers: [...signerInfo.signers],
+      signers: signerInfo.signers,
+    });
+    
+  }
+
+  authorizeCollateral = async (
+    collateral: PublicKey,
+    allocation: number,
+    reserve: PublicKey,
+    payer: PublicKey | Keypair
+  ) => {
+    const signerInfo: SignerInfo = getSignersFromPayer(payer);
+    console.log("authority: ", signerInfo.payer.toBase58());
+
+    const [crate, _crateBump] = await generateCrateAddress(reserve);
+    const { addr: bucket } = await this.generateBucketAddress(crate);
+
+    console.log("authority: ", signerInfo.payer.toBase58());
+    return this.bucketProgram.rpc.authorizeCollateral(collateral, allocation, {
+      accounts: {
+        bucket,
+        crateToken: crate,
+        authority: signerInfo.payer,
+      },
+      signers: signerInfo.signers,
     });
   };
 
@@ -341,6 +377,7 @@ export class BucketClient extends AccountUtils {
         },
         issueAuthority: issueAuthority,
         crateCollateral: crateCollateralATA.address,
+        collateralMint: collateral,
         depositor: signerInfo.payer,
         depositorCollateral: depsitorCollateralATA.address,
         depositorReserve: depositorReserveATA.address,
@@ -418,7 +455,7 @@ export class BucketClient extends AccountUtils {
         invariant(ownerATA && crateATA, "missing ATA");
 
         // use owner ATAs for the fees, since there are no fees
-        return [crateATA, ownerATA, ownerATA, ownerATA, token];
+        return [token, crateATA, ownerATA, ownerATA, ownerATA];
       });
     })();
 
