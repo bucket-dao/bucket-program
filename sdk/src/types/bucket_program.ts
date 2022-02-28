@@ -26,6 +26,11 @@ export type BucketProgram = {
           "isSigner": false
         },
         {
+          "name": "rebalanceAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "crateMint",
           "isMut": false,
           "isSigner": false
@@ -66,6 +71,32 @@ export type BucketProgram = {
       ]
     },
     {
+      "name": "updateRebalanceAuthority",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "bucket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "crateToken",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "rebalanceAuthority",
+          "type": "publicKey"
+        }
+      ]
+    },
+    {
       "name": "authorizeCollateral",
       "accounts": [
         {
@@ -88,6 +119,40 @@ export type BucketProgram = {
         {
           "name": "mint",
           "type": "publicKey"
+        },
+        {
+          "name": "allocation",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "setCollateralAllocations",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "bucket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "crateToken",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "allocations",
+          "type": {
+            "vec": {
+              "defined": "Collateral"
+            }
+          }
         }
       ]
     },
@@ -145,6 +210,11 @@ export type BucketProgram = {
           "isSigner": false
         },
         {
+          "name": "collateralMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "depositorCollateral",
           "isMut": true,
           "isSigner": false
@@ -152,6 +222,11 @@ export type BucketProgram = {
         {
           "name": "depositorReserve",
           "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "oracle",
+          "isMut": false,
           "isSigner": false
         }
       ],
@@ -214,6 +289,11 @@ export type BucketProgram = {
           "name": "withdrawerReserve",
           "isMut": true,
           "isSigner": false
+        },
+        {
+          "name": "oracle",
+          "isMut": false,
+          "isSigner": false
         }
       ],
       "args": [
@@ -247,9 +327,15 @@ export type BucketProgram = {
             "type": "publicKey"
           },
           {
-            "name": "whitelist",
+            "name": "rebalanceAuthority",
+            "type": "publicKey"
+          },
+          {
+            "name": "collateral",
             "type": {
-              "vec": "publicKey"
+              "vec": {
+                "defined": "Collateral"
+              }
             }
           }
         ]
@@ -282,18 +368,100 @@ export type BucketProgram = {
   ],
   "types": [
     {
+      "name": "Collateral",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "mint",
+            "type": "publicKey"
+          },
+          {
+            "name": "allocation",
+            "type": "u16"
+          }
+        ]
+      }
+    },
+    {
       "name": "ErrorCode",
       "type": {
         "kind": "enum",
         "variants": [
           {
-            "name": "WrongCollateralError"
-          },
-          {
             "name": "WrongBurnError"
           },
           {
-            "name": "WhitelistSizeLimitsExceeded"
+            "name": "AllocationBpsExceeded"
+          },
+          {
+            "name": "WrongCollateralError"
+          },
+          {
+            "name": "CollateralAlreadyAuthorizedError"
+          },
+          {
+            "name": "CollateralSizeLimitsExceeded"
+          },
+          {
+            "name": "NumericalUnderflowError"
+          },
+          {
+            "name": "NumericalOverflowError"
+          },
+          {
+            "name": "NumericalDivisionError"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PriceStatus",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Unknown"
+          },
+          {
+            "name": "Trading"
+          },
+          {
+            "name": "Halted"
+          },
+          {
+            "name": "Auction"
+          }
+        ]
+      }
+    },
+    {
+      "name": "CorpAction",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "NoCorpAct"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PriceType",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Unknown"
+          },
+          {
+            "name": "Price"
+          },
+          {
+            "name": "TWAP"
+          },
+          {
+            "name": "Volatility"
           }
         ]
       }
@@ -329,6 +497,11 @@ export const IDL: BucketProgram = {
           "isSigner": false
         },
         {
+          "name": "rebalanceAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "crateMint",
           "isMut": false,
           "isSigner": false
@@ -369,6 +542,32 @@ export const IDL: BucketProgram = {
       ]
     },
     {
+      "name": "updateRebalanceAuthority",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "bucket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "crateToken",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "rebalanceAuthority",
+          "type": "publicKey"
+        }
+      ]
+    },
+    {
       "name": "authorizeCollateral",
       "accounts": [
         {
@@ -391,6 +590,40 @@ export const IDL: BucketProgram = {
         {
           "name": "mint",
           "type": "publicKey"
+        },
+        {
+          "name": "allocation",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "setCollateralAllocations",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "bucket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "crateToken",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "allocations",
+          "type": {
+            "vec": {
+              "defined": "Collateral"
+            }
+          }
         }
       ]
     },
@@ -448,6 +681,11 @@ export const IDL: BucketProgram = {
           "isSigner": false
         },
         {
+          "name": "collateralMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "depositorCollateral",
           "isMut": true,
           "isSigner": false
@@ -455,6 +693,11 @@ export const IDL: BucketProgram = {
         {
           "name": "depositorReserve",
           "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "oracle",
+          "isMut": false,
           "isSigner": false
         }
       ],
@@ -517,6 +760,11 @@ export const IDL: BucketProgram = {
           "name": "withdrawerReserve",
           "isMut": true,
           "isSigner": false
+        },
+        {
+          "name": "oracle",
+          "isMut": false,
+          "isSigner": false
         }
       ],
       "args": [
@@ -550,9 +798,15 @@ export const IDL: BucketProgram = {
             "type": "publicKey"
           },
           {
-            "name": "whitelist",
+            "name": "rebalanceAuthority",
+            "type": "publicKey"
+          },
+          {
+            "name": "collateral",
             "type": {
-              "vec": "publicKey"
+              "vec": {
+                "defined": "Collateral"
+              }
             }
           }
         ]
@@ -585,18 +839,100 @@ export const IDL: BucketProgram = {
   ],
   "types": [
     {
+      "name": "Collateral",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "mint",
+            "type": "publicKey"
+          },
+          {
+            "name": "allocation",
+            "type": "u16"
+          }
+        ]
+      }
+    },
+    {
       "name": "ErrorCode",
       "type": {
         "kind": "enum",
         "variants": [
           {
-            "name": "WrongCollateralError"
-          },
-          {
             "name": "WrongBurnError"
           },
           {
-            "name": "WhitelistSizeLimitsExceeded"
+            "name": "AllocationBpsExceeded"
+          },
+          {
+            "name": "WrongCollateralError"
+          },
+          {
+            "name": "CollateralAlreadyAuthorizedError"
+          },
+          {
+            "name": "CollateralSizeLimitsExceeded"
+          },
+          {
+            "name": "NumericalUnderflowError"
+          },
+          {
+            "name": "NumericalOverflowError"
+          },
+          {
+            "name": "NumericalDivisionError"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PriceStatus",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Unknown"
+          },
+          {
+            "name": "Trading"
+          },
+          {
+            "name": "Halted"
+          },
+          {
+            "name": "Auction"
+          }
+        ]
+      }
+    },
+    {
+      "name": "CorpAction",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "NoCorpAct"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PriceType",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Unknown"
+          },
+          {
+            "name": "Price"
+          },
+          {
+            "name": "TWAP"
+          },
+          {
+            "name": "Volatility"
           }
         ]
       }

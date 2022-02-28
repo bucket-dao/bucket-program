@@ -1,25 +1,12 @@
 use {
-    anchor_lang::prelude::*,
     crate::state::{
+        bucket::{Bucket, BUCKET_ACCOUNT_SPACE},
         issue_authority::IssueAuthority,
         withdraw_authority::WithdrawAuthority,
-        bucket::{
-            Bucket,
-            BUCKET_ACCOUNT_SPACE
-        },
     },
-    anchor_spl::token::{
-        Burn,
-        Mint,
-        Transfer,
-        Token,
-        TokenAccount,
-    },
-    crate_token::cpi::accounts::{
-        Issue,
-        NewCrate,
-        Withdraw,
-    },
+    anchor_lang::prelude::*,
+    anchor_spl::token::{Burn, Mint, Token, TokenAccount, Transfer},
+    crate_token::cpi::accounts::{Issue, NewCrate, Withdraw},
 };
 
 /// if singleton (issue|withdraw) authority PDAs become problemtic,
@@ -64,6 +51,10 @@ pub struct CreateBucket<'info> {
     )]
     pub withdraw_authority: Account<'info, WithdrawAuthority>,
 
+    /// Account that has authority to invoke rebalance instruction
+    /// CHECK: unsafe account type, we don't read from or write to.
+    pub rebalance_authority:  AccountInfo<'info>,
+
     /// Mint of the reserve token linked to the [crate_token::CrateToken]
     pub crate_mint: Account<'info, Mint>,
 
@@ -80,7 +71,26 @@ pub struct CreateBucket<'info> {
 }
 
 #[derive(Accounts)]
-pub struct AuthorizeCollateral<'info> {
+pub struct UpdateRebalanceAuthority<'info> {
+    pub authority: Signer<'info>,
+
+    #[account(
+        mut,
+        seeds = [
+            b"bucket".as_ref(),
+            crate_token.key().to_bytes().as_ref()
+        ],
+        bump,
+        has_one = authority
+    )]
+    pub bucket: Account<'info, Bucket>,
+
+    /// CHECK: unsafe account type, required for CPI invocation.
+    pub crate_token: UncheckedAccount<'info>,
+}
+
+#[derive(Accounts)]
+pub struct AuthorizedUpdate<'info> {
     pub authority: Signer<'info>,
 
     #[account(
@@ -115,11 +125,17 @@ pub struct Deposit<'info> {
     #[account(mut)]
     pub crate_collateral: Box<Account<'info, TokenAccount>>,
 
+    // #[account(mut)]
+    pub collateral_mint: Account<'info, Mint>,
+
     #[account(mut)]
     pub depositor_collateral: Box<Account<'info, TokenAccount>>,
 
     #[account(mut)]
     pub depositor_reserve: Box<Account<'info, TokenAccount>>,
+
+    /// CHECK: required for CPI into pyth
+    pub oracle: AccountInfo<'info>,
 }
 
 #[derive(Accounts)]
@@ -138,6 +154,9 @@ pub struct Redeem<'info> {
 
     #[account(mut)]
     pub withdrawer_reserve: Box<Account<'info, TokenAccount>>,
+
+    /// CHECK: required for CPI into pyth
+    pub oracle: AccountInfo<'info>,
 }
 
 #[derive(Accounts)]
@@ -164,6 +183,7 @@ pub struct Common<'info> {
     pub token_program: Program<'info, Token>,
 }
 
+// need redeem asset mint
 #[derive(Accounts)]
 pub struct RedeemAsset<'info> {
     /// Mint of the collateral to redeem
@@ -241,7 +261,6 @@ impl<'info> Deposit<'info> {
 }
 
 impl<'info> Redeem<'info> {
-
     pub fn into_burn_reserve_token_context(&self) -> CpiContext<'_, '_, '_, 'info, Burn<'info>> {
         let cpi_program = self.common.token_program.to_account_info();
 

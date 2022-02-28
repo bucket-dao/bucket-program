@@ -4,8 +4,11 @@ mod context;
 mod error;
 mod instructions;
 mod state;
+mod util;
+mod constant;
 
 use context::*;
+use state::bucket::Collateral;
 
 declare_id!("HHqKhZs3ReukRtGqCrj1DJoSknWuCddQ3oyuQY5Uhf5P");
 
@@ -31,11 +34,30 @@ pub mod bucket_program {
         Ok(())
     }
 
-    pub fn authorize_collateral(
-        ctx: Context<AuthorizeCollateral>,
-        mint: Pubkey,
+    pub fn update_rebalance_authority(
+        ctx: Context<AuthorizedUpdate>,
+        rebalance_authority: Pubkey,
     ) -> ProgramResult {
-        instructions::authorize_collateral::handle(ctx, mint)?;
+        instructions::update_rebalance_authority::handle(ctx, rebalance_authority)?;
+
+        Ok(())
+    }
+
+    pub fn authorize_collateral(
+        ctx: Context<AuthorizedUpdate>,
+        mint: Pubkey,
+        allocation: u16
+    ) -> ProgramResult {
+        instructions::authorize_collateral::handle(ctx, mint, allocation)?;
+
+        Ok(())
+    }
+
+    pub fn set_collateral_allocations(
+        ctx: Context<AuthorizedUpdate>,
+        allocations: Vec<Collateral>
+    ) -> ProgramResult {
+        instructions::set_collateral_allocations::handle(ctx, allocations)?;
 
         Ok(())
     }
