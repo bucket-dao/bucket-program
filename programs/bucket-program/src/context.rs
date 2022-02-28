@@ -1,25 +1,12 @@
 use {
-    anchor_lang::prelude::*,
     crate::state::{
+        bucket::{Bucket, BUCKET_ACCOUNT_SPACE},
         issue_authority::IssueAuthority,
         withdraw_authority::WithdrawAuthority,
-        bucket::{
-            Bucket,
-            BUCKET_ACCOUNT_SPACE
-        },
     },
-    anchor_spl::token::{
-        Burn,
-        Mint,
-        Transfer,
-        Token,
-        TokenAccount,
-    },
-    crate_token::cpi::accounts::{
-        Issue,
-        NewCrate,
-        Withdraw,
-    },
+    anchor_lang::prelude::*,
+    anchor_spl::token::{Burn, Mint, Token, TokenAccount, Transfer},
+    crate_token::cpi::accounts::{Issue, NewCrate, Withdraw},
 };
 
 /// if singleton (issue|withdraw) authority PDAs become problemtic,
@@ -120,6 +107,8 @@ pub struct Deposit<'info> {
 
     #[account(mut)]
     pub depositor_reserve: Box<Account<'info, TokenAccount>>,
+
+    pub oracle: AccountInfo<'info>,
 }
 
 #[derive(Accounts)]
@@ -138,6 +127,7 @@ pub struct Redeem<'info> {
 
     #[account(mut)]
     pub withdrawer_reserve: Box<Account<'info, TokenAccount>>,
+    pub oracle: AccountInfo<'info>,
 }
 
 #[derive(Accounts)]
@@ -164,6 +154,7 @@ pub struct Common<'info> {
     pub token_program: Program<'info, Token>,
 }
 
+// need redeem asset mint
 #[derive(Accounts)]
 pub struct RedeemAsset<'info> {
     #[account(mut)]
@@ -180,6 +171,9 @@ pub struct RedeemAsset<'info> {
     /// Protocol fee collateral ATA
     #[account(mut)]
     pub protocol_fee_destination: Box<Account<'info, TokenAccount>>,
+
+    #[account(mut)]
+    pub collateral_mint: Account<'info, Mint>,
 }
 
 // ======================================
@@ -238,7 +232,6 @@ impl<'info> Deposit<'info> {
 }
 
 impl<'info> Redeem<'info> {
-
     pub fn into_burn_reserve_token_context(&self) -> CpiContext<'_, '_, '_, 'info, Burn<'info>> {
         let cpi_program = self.common.token_program.to_account_info();
 

@@ -8,4 +8,8 @@ pub enum ErrorCode {
     WrongBurnError,
     #[msg("Whitelist size limits exceeded")]
     WhitelistSizeLimitsExceeded,
+    #[msg("Numerical Underflow Error")]
+    NumericalUnderflowError,
+    #[msg("Numerical Overflow Error")]
+    NumericalOverflowError,
 }

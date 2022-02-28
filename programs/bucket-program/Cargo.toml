@@ -22,3 +22,7 @@ crate-token = { version = "0.4.1", features = ["cpi"] }
 crate-redeem-in-kind = { version = "0.4.1", features = ["cpi"] }
 vipers = "1.5.9"
 num-traits = "0.2"
+pyth-client = {version = "0.5.0", features = ["no-entrypoint"]}
+bytemuck = "1.4.0"
+
+

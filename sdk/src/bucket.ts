@@ -300,7 +300,8 @@ export class BucketClient extends AccountUtils {
     reserve: PublicKey,
     collateral: PublicKey,
     issueAuthority: PublicKey,
-    depositor: PublicKey | Keypair
+    depositor: PublicKey | Keypair,
+    oracle: PublicKey,
   ) => {
     const signerInfo = getSignersFromPayer(depositor);
 
@@ -343,6 +344,7 @@ export class BucketClient extends AccountUtils {
         depositor: signerInfo.payer,
         depositorCollateral: depsitorCollateralATA.address,
         depositorReserve: depositorReserveATA.address,
+        oracle: oracle,
       },
       preInstructions: [
         ...(depsitorCollateralATA.instruction
@@ -364,7 +366,8 @@ export class BucketClient extends AccountUtils {
     reserve: PublicKey,
     collateralTokens: PublicKey[],
     withdrawAuthority: PublicKey,
-    withdrawer: PublicKey | Keypair
+    withdrawer: PublicKey | Keypair,
+    oracle: PublicKey
   ) => {
     const signerInfo = getSignersFromPayer(withdrawer);
 
@@ -415,7 +418,7 @@ export class BucketClient extends AccountUtils {
         invariant(ownerATA && crateATA, "missing ATA");
 
         // use owner ATAs for the fees, since there are no fees
-        return [crateATA, ownerATA, ownerATA, ownerATA];
+        return [crateATA, ownerATA, ownerATA, ownerATA, token];
       });
     })();
 
@@ -440,6 +443,7 @@ export class BucketClient extends AccountUtils {
         withdrawAuthority: withdrawAuthority,
         withdrawer: signerInfo.payer,
         withdrawerReserve: withdrawerReserveATA.address,
+        oracle: oracle,
       },
       remainingAccounts,
       preInstructions: createATAInstructions,

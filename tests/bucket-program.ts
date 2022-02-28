@@ -6,6 +6,8 @@ import { expect } from "chai";
 import { TokenBalance } from "./common/util";
 import { expectThrowsAsync } from "./common/util";
 import { BucketClient, executeTx, NodeWallet } from "../sdk/src/index";
+import { mockOracle } from "./common/testHelpers";
+
 
 describe("bucket-program", () => {
   const _provider = anchor.Provider.env();
@@ -128,7 +130,8 @@ describe("bucket-program", () => {
     }
   });
 
-  it("User attempts to deposit unauthorized collateral", () => {
+  it("User attempts to deposit unauthorized collateral", async () => {
+    const oracle = await mockOracle(1);
     const depositAmount = new u64(1_000_000);
     expectThrowsAsync(() =>
       client.deposit(
@@ -136,7 +139,8 @@ describe("bucket-program", () => {
         reserve.publicKey,
         collateralA.publicKey,
         issueAuthority,
-        userA
+        userA,
+        oracle
       )
     ).catch((err: Error) => console.log("err: ", err.message)); // make ts happy
   });
@@ -189,6 +193,9 @@ describe("bucket-program", () => {
     // mint collateral and fund depositor ATA with collateral
     const depositAmount = new u64(1_000_000);
 
+    const oracle = await mockOracle(1);
+    console.log("MOCK ORACLE: ", oracle);
+
     // fetch depositor ATA balance before deposit
     const depositorCollateralBefore = await client.fetchTokenBalance(
       collateralA.publicKey,
@@ -202,7 +209,8 @@ describe("bucket-program", () => {
       reserve.publicKey,
       collateralA.publicKey,
       issueAuthority,
-      userA
+      userA,
+      oracle,
     );
 
     // fetch depositor & crate ATA balances after deposit
@@ -220,6 +228,11 @@ describe("bucket-program", () => {
       crateKey
     );
 
+    console.log("Deposit Amount: ", depositAmount)
+    console.log("Depositor Reserve After: ", depositorReserveAfter)
+    console.log("Depositor Collateral After: ", depositorCollateralAfter)
+    console.log("Crate Collateral After: ", crateCollateralAfter)
+
     expect(depositorReserveAfter).to.equal(depositAmount.toNumber());
     expect(depositorCollateralAfter).to.equal(
       depositorCollateralBefore - depositAmount.toNumber()
@@ -230,6 +243,7 @@ describe("bucket-program", () => {
   it("User B, C deposits authorized collateral B, C, issue reserve tokens", async () => {
     // mint collateral and fund depositor ATA with collateral
     const depositAmount = new u64(1_000_000);
+    const oracle = await mockOracle(1);
 
     // ==================================================================
     // collateral B checks & rpc call
@@ -248,7 +262,8 @@ describe("bucket-program", () => {
       reserve.publicKey,
       collateralB.publicKey,
       issueAuthority,
-      userB
+      userB,
+      oracle
     );
 
     // fetch user B & crate ATA balances for collateral B after deposit
@@ -289,7 +304,8 @@ describe("bucket-program", () => {
       reserve.publicKey,
       collateralC.publicKey,
       issueAuthority,
-      userC
+      userC, 
+      oracle
     );
 
     // fetch user B & crate ATA balances for collateral B after deposit
@@ -317,12 +333,13 @@ describe("bucket-program", () => {
 
   it("Redeem tokens", async () => {
     const tokenBalances: { [mint: string]: TokenBalance } = {};
-
+    const oracle = await mockOracle(1);
     // fetch number of redeemable reserve tokens
     const userAReserveBefore = await client.fetchTokenBalance(
       reserve.publicKey,
       userA.publicKey
     );
+    console.log("user a reserve: ", userAReserveBefore);
 
     for (const collateral of [collateralA, collateralB, collateralC]) {
       const collateralPublicKey = collateral.publicKey;
@@ -331,6 +348,8 @@ describe("bucket-program", () => {
         collateralPublicKey,
         userA.publicKey
       );
+
+      console.log("user collateral amount: ", userCollateralAmount);
 
       // previously deposited amount
       if (collateralPublicKey.toBase58() === collateralA.publicKey.toBase58()) {
@@ -345,12 +364,14 @@ describe("bucket-program", () => {
     }
 
     const redeemAmount = new u64(userAReserveBefore);
+    console.log("redeem amount: ", redeemAmount.toNumber());
     await client.redeem(
       redeemAmount,
       reserve.publicKey,
       [collateralA.publicKey, collateralB.publicKey, collateralC.publicKey],
       withdrawAuthority,
-      userA
+      userA,
+      oracle,
     );
 
     // fetch withdrawer & crate ATA balances after redeem
@@ -363,6 +384,7 @@ describe("bucket-program", () => {
     // assuming equal collateral shares for all 3 collateral mints.
     // these numbers will change if relative collateral changes.
     const collateralShare = Math.round(redeemAmount.toNumber() / 3);
+    console.log("collateral share: ", collateralShare);
 
     for (const collateral of [collateralA, collateralB, collateralC]) {
       const collateralPublicKey = collateral.publicKey;
@@ -371,7 +393,8 @@ describe("bucket-program", () => {
         collateralPublicKey,
         userA.publicKey
       );
-
+      console.log("what's in each user collateral", userCollateralAmount);
+      console.log("what's in each token balance", tokenBalances[collateralPublicKey.toBase58()].before + collateralShare);
       expect(userCollateralAmount).to.equal(
         tokenBalances[collateralPublicKey.toBase58()].before + collateralShare
       );
