@@ -183,7 +183,10 @@ pub struct Common<'info> {
     pub token_program: Program<'info, Token>,
 }
 
-// need redeem asset mint
+// =====================================================
+// META CONTEXT; TRANSFORMATIONS DONE JIT IN INSTRUCTION
+// =====================================================
+
 #[derive(Accounts)]
 pub struct RedeemAsset<'info> {
     /// Mint of the collateral to redeem

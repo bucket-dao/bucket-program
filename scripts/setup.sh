@@ -1,20 +1,20 @@
 #!/usr/bin/env bash
 echo installing root packages
-yarn install 
-anchor build 
+yarn install
+anchor build
 yarn cp-idl
 
 echo installing sdk packages
 cd sdk
-yarn install 
-yarn build 
+yarn install
+yarn build
 
 echo running program tests
-cd .. 
-anchor test 
+cd ..
+anchor test
 
 echo installing client packages
-cd app 
+cd app
 yarn install
 
 echo installing cli packages

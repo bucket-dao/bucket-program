@@ -127,6 +127,32 @@ export type BucketProgram = {
       ]
     },
     {
+      "name": "removeCollateral",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "bucket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "crateToken",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "mint",
+          "type": "publicKey"
+        }
+      ]
+    },
+    {
       "name": "setCollateralAllocations",
       "accounts": [
         {
@@ -392,13 +418,16 @@ export type BucketProgram = {
             "name": "WrongBurnError"
           },
           {
-            "name": "AllocationBpsExceeded"
+            "name": "AllocationBpsError"
           },
           {
             "name": "WrongCollateralError"
           },
           {
             "name": "CollateralAlreadyAuthorizedError"
+          },
+          {
+            "name": "CollateralDoesNotExistError"
           },
           {
             "name": "CollateralSizeLimitsExceeded"
@@ -411,6 +440,9 @@ export type BucketProgram = {
           },
           {
             "name": "NumericalDivisionError"
+          },
+          {
+            "name": "NumberOfSizeNotSupported"
           }
         ]
       }
@@ -598,6 +630,32 @@ export const IDL: BucketProgram = {
       ]
     },
     {
+      "name": "removeCollateral",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "bucket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "crateToken",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "mint",
+          "type": "publicKey"
+        }
+      ]
+    },
+    {
       "name": "setCollateralAllocations",
       "accounts": [
         {
@@ -863,13 +921,16 @@ export const IDL: BucketProgram = {
             "name": "WrongBurnError"
           },
           {
-            "name": "AllocationBpsExceeded"
+            "name": "AllocationBpsError"
           },
           {
             "name": "WrongCollateralError"
           },
           {
             "name": "CollateralAlreadyAuthorizedError"
+          },
+          {
+            "name": "CollateralDoesNotExistError"
           },
           {
             "name": "CollateralSizeLimitsExceeded"
@@ -882,6 +943,9 @@ export const IDL: BucketProgram = {
           },
           {
             "name": "NumericalDivisionError"
+          },
+          {
+            "name": "NumberOfSizeNotSupported"
           }
         ]
       }

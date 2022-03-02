@@ -53,6 +53,22 @@ pub mod bucket_program {
         Ok(())
     }
 
+    // remove collateral from this list of approved should we extend this instruction
+    // to swap the de-authorized collateral mint to an authorized collateral mint?
+    // if not, users will still receive this mint on redeem without being able to deposit.
+    // ultimately, this requirements for this instruction depend on the use case for
+    // removing a mint, e.g. a collateral mint is determined too risky, sus, etc.
+    // in this case, it's likely we would want to empty this mint from  the pool.
+    // alt, the rebalance instruction _could_ help us, depending on implementation.
+    pub fn remove_collateral(
+        ctx: Context<AuthorizedUpdate>,
+        mint: Pubkey
+    ) -> ProgramResult {
+        instructions::remove_collateral::handle(ctx, mint)?;
+
+        Ok(())
+    }
+
     pub fn set_collateral_allocations(
         ctx: Context<AuthorizedUpdate>,
         allocations: Vec<Collateral>

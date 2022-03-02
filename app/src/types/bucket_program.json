@@ -127,6 +127,32 @@
       ]
     },
     {
+      "name": "removeCollateral",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "bucket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "crateToken",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "mint",
+          "type": "publicKey"
+        }
+      ]
+    },
+    {
       "name": "setCollateralAllocations",
       "accounts": [
         {
@@ -392,13 +418,16 @@
             "name": "WrongBurnError"
           },
           {
-            "name": "AllocationBpsExceeded"
+            "name": "AllocationBpsError"
           },
           {
             "name": "WrongCollateralError"
           },
           {
             "name": "CollateralAlreadyAuthorizedError"
+          },
+          {
+            "name": "CollateralDoesNotExistError"
           },
           {
             "name": "CollateralSizeLimitsExceeded"
@@ -411,6 +440,9 @@
           },
           {
             "name": "NumericalDivisionError"
+          },
+          {
+            "name": "NumberOfSizeNotSupported"
           }
         ]
       }
