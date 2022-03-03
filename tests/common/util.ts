@@ -1,5 +1,6 @@
 import { PublicKey } from "@solana/web3.js";
 import { expect } from "chai";
+import { BucketClient } from "../../sdk/src";
 
 export interface TokenBalance {
   mint: PublicKey;
@@ -21,4 +22,17 @@ export const expectThrowsAsync = async (
   if (errorMessage) {
     expect((error as any).message).to.equal(errorMessage);
   }
+};
+
+export const assertKeysEqual = (a: PublicKey, b: PublicKey) => {
+  expect(a.toBase58()).to.equal(b.toBase58());
+};
+
+export const isApproximatelyEqual = async (
+  expected: number,
+  actual: number,
+  threshold: number = 1 // %
+) => {
+  const percentDiff = ((expected - actual) / ((expected + actual) / 2)) * 100;
+  expect(percentDiff <= threshold).to.be.true;
 };

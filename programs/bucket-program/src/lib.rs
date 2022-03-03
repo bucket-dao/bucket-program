@@ -72,6 +72,12 @@ pub mod bucket_program {
     /// handle this scenario and update the collateral allocation accordingly.
     ///
     /// instruction privilege: only bucket authority can call this instruction
+    ///
+    /// dev note: when removing collateral, we need to be careful about leaving collateral in the pool.
+    /// any non-authorized collateral still sitting in the pool can mess up redemptions. this discrepancy
+    /// will be small for miniscule collateral allocations. but, we still need to resolve this issue.
+    /// e.g. consider if we authorize collateral D & E, deposit some of D & E, then remove collateral D & E.
+    /// under curent logic, the redemption amount will be off by some value.
     pub fn remove_collateral(
         ctx: Context<AuthorizedUpdate>,
         mint: Pubkey

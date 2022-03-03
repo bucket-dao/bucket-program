@@ -21,14 +21,11 @@ import {
   ParsedTokenAccount,
   SignerInfo,
   PdaDerivationResult,
+  Collateral,
+  CollateralAllocationResult
 } from "./common/types";
 import { addIxn, getSignersFromPayer } from "./common/util";
 import { BucketProgram } from "./types/bucket_program";
-
-export interface Collateral {
-  mint: PublicKey;
-  allocation: number;
-}
 
 export class BucketClient extends AccountUtils {
   wallet: Wallet;
@@ -178,9 +175,15 @@ export class BucketClient extends AccountUtils {
     for (const mint of mints) {
       const tokenAccount = await this.getTokenAccountByMint(owner, mint);
 
+      // ignore: no account data
+      if (!tokenAccount.value || tokenAccount.value.length === 0) {
+        continue;
+      }
+
       const amount = new u64(
         +tokenAccount.value[0].account.data.parsed.info.tokenAmount.amount
       );
+
       const decimals: number =
         tokenAccount.value[0].account.data.parsed.info.tokenAmount.decimals;
 
@@ -199,23 +202,36 @@ export class BucketClient extends AccountUtils {
   // given mints and token amount, we can additionally fetch overall supply and price to back into floating
   // price of the reserve asset. this is only if price is a floating peg.
   fetchParsedTokenAccountsForAuthorizedCollateral = async (
-    bucket: PublicKey | any, // how to specify bucket type from anchor types?
+    bucket: PublicKey, // optionally pass in bucket obj?
     owner: PublicKey,
     mints?: PublicKey[]
   ) => {
-    const parsedTokenAccounts: ParsedTokenAccount[] = mints
-      ? await this.fetchParsedTokenAccountsByMints(mints, owner)
-      : await this.fetchParsedTokenAccounts(owner);
+    const _mints = mints
+      ? mints
+      : (await this.fetchBucket(bucket)).collateral.map(collateral => collateral.mint);
+    return this.fetchParsedTokenAccountsByMints(_mints, owner);
+  };
 
-    const { bucket: _bucket, collateral } =
-      bucket instanceof PublicKey ? await this.fetchBucket(bucket) : bucket;
+  fetchCollateralAllocations = async (
+    bucket: PublicKey,
+    crate: PublicKey
+  ): Promise<CollateralAllocationResult> => {
+    const tokens = await this.fetchParsedTokenAccountsForAuthorizedCollateral(
+      bucket,
+      crate
+    );
 
-    const _collateral: string[] = collateral.map((item: PublicKey) =>
-      item.toBase58()
-    );
-    return parsedTokenAccounts.filter((account) =>
-      _collateral.includes(account.mint.toBase58())
-    );
+    return {
+      allocations: tokens.map((token) => {
+        return {
+          mint: token.mint,
+          supply: token.amount.toNumber(),
+        };
+      }),
+      supply: tokens
+        .map((token) => token.amount.toNumber())
+        .reduce((a, b) => a + b)
+    };
   };
 
   // ================================================

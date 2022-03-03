@@ -3,6 +3,26 @@ import { Keypair, PublicKey, TransactionInstruction } from "@solana/web3.js";
 
 export const U64_ZERO = new u64(0);
 
+export interface Collateral {
+  mint: PublicKey;
+  allocation: number;
+}
+
+export interface Allocation {
+  mint: PublicKey,
+  supply: number
+}
+
+export interface CollateralAllocationResult {
+  allocations: Allocation[],
+  supply: number
+}
+
+export interface SwapAmount {
+  amountIn: u64,
+  minAmountOut: u64
+}
+
 export interface SignerInfo {
   payer: PublicKey;
   signers: Keypair[];
