@@ -13,9 +13,6 @@ type Props = {
   setCurrentMaxAmount: Dispatch<
     SetStateAction<{ amount: string; decimals: number }>
   >;
-  // depositAmount: string;
-  // handleDepositAmountUpdate: any;
-  // setDepositAmount: Dispatch<SetStateAction<string>>;
   wallet: WalletContextState;
   bucketClient: BucketClient;
 };
@@ -25,9 +22,6 @@ const Deposit = ({
   defaultCollateralToken,
   currentMaxAmount,
   setCurrentMaxAmount,
-  // depositAmount,
-  // handleDepositAmountUpdate,
-  // setDepositAmount,
   wallet,
   bucketClient,
 }: Props) => {

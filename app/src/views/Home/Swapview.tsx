@@ -8,7 +8,6 @@ import { getCurrentTokenData } from "../../utils/tokens";
 import Deposit from "../../components/Deposit/Deposit";
 import Balance from "../../components/Balance";
 import Redeem from "../../components/Redeem/Redeem";
-// import BucketContext from "../../contexts/BucketContext";
 
 const Swapview = () => {
   const connection = useConnection();
