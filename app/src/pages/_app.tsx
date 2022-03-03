@@ -11,6 +11,10 @@ import "../styles/App.css";
 // const SOLANA_NETWORK = WalletAdapterNetwork.Mainnet;
 const SOLANA_NETWORK = WalletAdapterNetwork.Devnet;
 const network = SOLANA_NETWORK;
+let _endpoint = "https://api.devnet.solana.com";
+if (network !== WalletAdapterNetwork.Devnet) {
+  _endpoint = "https://api.mainnet-beta.solana.com";
+}
 
 const WalletProvider = dynamic(
   () => import("../contexts/ClientWalletProvider"),
@@ -20,7 +24,7 @@ const WalletProvider = dynamic(
 );
 
 function MyApp({ Component, pageProps }: AppProps) {
-  const endpoint = useMemo(() => "https://api.devnet.solana.com", []);
+  const endpoint = useMemo(() => _endpoint, []);
 
   return (
     <ConnectionProvider endpoint={endpoint}>

@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "rm -r .next && next dev",
+    "dev": "next dev",
+    "dev:rm-next": "rm -r .next && next dev",
     "dev:upd": "cd ../sdk && yarn build && cd ../app && rm yarn.lock && yarn && rm -r .next && next dev",
     "build": "next build",
     "start": "next start",
@@ -12,7 +13,9 @@
   "dependencies": {
     "@babel/core": "^7.17.5",
     "@babel/preset-env": "^7.16.11",
-    "@bucket-program/sdk": "file:../sdk",
+    "@bucket-program/sdk": "^0.0.1",
+    "@headlessui/react": "^1.5.0",
+    "@heroicons/react": "^1.0.5",
     "@solana/spl-token-registry": "^0.2.298",
     "@solana/wallet-adapter-base": "^0.7.0",
     "@solana/wallet-adapter-phantom": "^0.7.0",
@@ -37,6 +40,7 @@
     "autoprefixer": "^10.4.0",
     "eslint": "7",
     "eslint-config-next": "12.0.3",
+    "netlify-cli": "^9.12.2",
     "postcss": "^8.3.11",
     "tailwindcss": "^2.2.19",
     "typescript": "4.4.4"

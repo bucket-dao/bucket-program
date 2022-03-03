@@ -9,8 +9,11 @@ target
 .pnp.js
 
 # next.js
-app/.next/
-app/out/
+**/.next/
+**/out/
+
+# netlify
+**/.netlify
 
 # production
 /build

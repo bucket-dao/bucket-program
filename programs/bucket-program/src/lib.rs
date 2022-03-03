@@ -10,7 +10,7 @@ mod constant;
 use context::*;
 use state::bucket::Collateral;
 
-declare_id!("HHqKhZs3ReukRtGqCrj1DJoSknWuCddQ3oyuQY5Uhf5P");
+declare_id!("42SMgTM8zuez9AN5EyctZ9Si55cN3ioKpCVoCxRLuVBH");
 
 #[program]
 pub mod bucket_program {

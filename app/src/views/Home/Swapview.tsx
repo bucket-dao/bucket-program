@@ -1,14 +1,30 @@
-import { useEffect } from "react";
-import { Keypair, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
+import { useContext, useEffect, useState } from "react";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { SignerWalletAdapter } from "@solana/wallet-adapter-base";
 import { BucketClient } from "@bucket-program/sdk";
 
 import { initBucketClient } from "../../utils/bucket";
+import { getCurrentTokenData } from "../../utils/tokens";
+import Deposit from "../../components/Deposit/Deposit";
+import Balance from "../../components/Balance";
+import Redeem from "../../components/Redeem/Redeem";
+// import BucketContext from "../../contexts/BucketContext";
 
 const Swapview = () => {
   const connection = useConnection();
   const wallet = useWallet();
+  const [bucketClient, setBucketClient] = useState<BucketClient>();
+  
+  const [collateralTokens, setCollateralTokens] = useState([]);
+  const [defaultCollateralToken, setDefaultCollateralToken] = useState();
+  const [reserveToken, setReserveToken] = useState([]);
+  const [currentMaxAmount, setCurrentMaxAmount] = useState<{
+    amount: string;
+    decimals: number;
+  }>({
+    amount: "0",
+    decimals: 1,
+  });
 
   useEffect(() => {
     const init = async (): Promise<BucketClient> => {
@@ -20,33 +36,52 @@ const Swapview = () => {
 
     // remove later, sanity check that client actually inits
     init().then(async (client) => {
-      const balance = await client.getBalance(
-        new PublicKey("EozbUuZeSq8wxmStgXUTaPCyZHVnYn7kxEcpk4FwnmDo")
-      );
-      console.log("balance: ", balance / LAMPORTS_PER_SOL);
       if (wallet.publicKey) {
-        const reserve = Keypair.generate();
-        const payer = wallet.publicKey;
+        setBucketClient(client);
+
+        const {
+          collateralTokens: _collateralTokens,
+          currentCollateralToken: defaultCollateralToken,
+          currentMaxAmount: _currentMaxAmount,
+          reserveToken: _reserveToken,
+        } = await getCurrentTokenData(wallet);
+        console.log(_currentMaxAmount);
+
+        setCollateralTokens(_collateralTokens);
+        setDefaultCollateralToken(defaultCollateralToken);
+        setCurrentMaxAmount(_currentMaxAmount);
+        setReserveToken(_reserveToken);
       }
     });
   }, []);
 
   return (
-    <div className="text-center w-full">
-      <h1 className="mt-16 text-5xl font-bold">
-        <div className="h-screen bg-gray-100 flex items-center justify-center">
-          <a
-            className="rounded-lg shadow-lg bg-white p-6 w-72 group hover:shadow-2xl"
-            href="#"
-          >
-            <p className="text-lg text-gray-800 font-semibold">swap</p>
-            <div className="flex flex-row mt-3 gap-2 place-items-end">
-              <p className="text-6xl font-bold"> $10 </p>
-              <p className="text-2xl font-light items-bottom pb-1"> /mo </p>
-            </div>
-          </a>
+    <div className="w-full text-black">
+      {bucketClient && (
+        <div className=" font-bold">
+          <div className="mt-16">
+            {defaultCollateralToken && (
+              <Deposit
+                collateralTokens={collateralTokens}
+                defaultCollateralToken={defaultCollateralToken}
+                currentMaxAmount={currentMaxAmount}
+                setCurrentMaxAmount={setCurrentMaxAmount}
+                wallet={wallet}
+                bucketClient={bucketClient}
+              />
+            )}
+          </div>
+          <div className="mt-16">
+            <Redeem
+              reserveToken={reserveToken.length > 0 ? reserveToken[0] : []}
+            />
+          </div>
+          <Balance
+            collateralTokens={collateralTokens}
+            reserveToken={reserveToken}
+          />
         </div>
-      </h1>
+      )}
     </div>
   );
 };
