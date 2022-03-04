@@ -36,7 +36,7 @@ const Redeem = ({ reserveToken }: Props) => {
     //   const _collaterals = whitelist.map((el) => new PublicKey(el));
     //   console.log(">", _collaterals);
     //   const programID = new PublicKey(
-    //     "42SMgTM8zuez9AN5EyctZ9Si55cN3ioKpCVoCxRLuVBH"
+    //     "EEu81GF1qYdoiBp9V13o7sZUcmXChYr5wcv3z9zLPf39"
     //   );
     //   const { addr: withdrawAuthority, bump } =
     //     await bucketClient.generateWithdrawAuthority(programID);

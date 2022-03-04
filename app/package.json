@@ -13,7 +13,7 @@
   "dependencies": {
     "@babel/core": "^7.17.5",
     "@babel/preset-env": "^7.16.11",
-    "@bucket-program/sdk": "^0.0.1",
+    "@bucket-program/sdk": "^0.0.4",
     "@headlessui/react": "^1.5.0",
     "@heroicons/react": "^1.0.5",
     "@solana/spl-token-registry": "^0.2.298",

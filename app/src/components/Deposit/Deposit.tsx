@@ -57,13 +57,17 @@ const Deposit = ({
         await bucketClient.generateIssueAuthority(BUCKET_PROGRAM_ID);
 
       const _depositAmount = +depositAmount * 10 ** currentMaxAmount.decimals;
-
+      // using devnet usdc oracle for now
+      const oracle = new PublicKey(
+        "5U3bH5b6XtG99aVWLqwVzYPVpQiFHytBD68Rz2eFPZd7"
+      );
       const res = await bucketClient.deposit(
         new u64(_depositAmount),
         new PublicKey(RESERVE_MINT),
         new PublicKey(collateralMint),
         issueAuthority,
-        wallet.publicKey
+        wallet.publicKey,
+        oracle
       );
       console.log("deposit response", res);
     }
