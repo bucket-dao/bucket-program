@@ -384,38 +384,6 @@ export type BucketProgram = {
       }
     },
     {
-      "name": "ErrorCode",
-      "type": {
-        "kind": "enum",
-        "variants": [
-          {
-            "name": "WrongBurnError"
-          },
-          {
-            "name": "AllocationBpsExceeded"
-          },
-          {
-            "name": "WrongCollateralError"
-          },
-          {
-            "name": "CollateralAlreadyAuthorizedError"
-          },
-          {
-            "name": "CollateralSizeLimitsExceeded"
-          },
-          {
-            "name": "NumericalUnderflowError"
-          },
-          {
-            "name": "NumericalOverflowError"
-          },
-          {
-            "name": "NumericalDivisionError"
-          }
-        ]
-      }
-    },
-    {
       "name": "PriceStatus",
       "type": {
         "kind": "enum",
@@ -465,6 +433,48 @@ export type BucketProgram = {
           }
         ]
       }
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "WrongBurnError",
+      "msg": "Must burn reserve token"
+    },
+    {
+      "code": 6001,
+      "name": "AllocationBpsExceeded",
+      "msg": "Max allocation bps exceeded"
+    },
+    {
+      "code": 6002,
+      "name": "WrongCollateralError",
+      "msg": "Must deposit an approved collateral mint"
+    },
+    {
+      "code": 6003,
+      "name": "CollateralAlreadyAuthorizedError",
+      "msg": "Cannot re-authorized a collateral mint authorized"
+    },
+    {
+      "code": 6004,
+      "name": "CollateralSizeLimitsExceeded",
+      "msg": "Collateral size limits exceeded"
+    },
+    {
+      "code": 6005,
+      "name": "NumericalUnderflowError",
+      "msg": "Numerical Underflow Error"
+    },
+    {
+      "code": 6006,
+      "name": "NumericalOverflowError",
+      "msg": "Numerical Overflow Error"
+    },
+    {
+      "code": 6007,
+      "name": "NumericalDivisionError",
+      "msg": "Numerical Division Error"
     }
   ]
 };
@@ -855,38 +865,6 @@ export const IDL: BucketProgram = {
       }
     },
     {
-      "name": "ErrorCode",
-      "type": {
-        "kind": "enum",
-        "variants": [
-          {
-            "name": "WrongBurnError"
-          },
-          {
-            "name": "AllocationBpsExceeded"
-          },
-          {
-            "name": "WrongCollateralError"
-          },
-          {
-            "name": "CollateralAlreadyAuthorizedError"
-          },
-          {
-            "name": "CollateralSizeLimitsExceeded"
-          },
-          {
-            "name": "NumericalUnderflowError"
-          },
-          {
-            "name": "NumericalOverflowError"
-          },
-          {
-            "name": "NumericalDivisionError"
-          }
-        ]
-      }
-    },
-    {
       "name": "PriceStatus",
       "type": {
         "kind": "enum",
@@ -936,6 +914,48 @@ export const IDL: BucketProgram = {
           }
         ]
       }
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "WrongBurnError",
+      "msg": "Must burn reserve token"
+    },
+    {
+      "code": 6001,
+      "name": "AllocationBpsExceeded",
+      "msg": "Max allocation bps exceeded"
+    },
+    {
+      "code": 6002,
+      "name": "WrongCollateralError",
+      "msg": "Must deposit an approved collateral mint"
+    },
+    {
+      "code": 6003,
+      "name": "CollateralAlreadyAuthorizedError",
+      "msg": "Cannot re-authorized a collateral mint authorized"
+    },
+    {
+      "code": 6004,
+      "name": "CollateralSizeLimitsExceeded",
+      "msg": "Collateral size limits exceeded"
+    },
+    {
+      "code": 6005,
+      "name": "NumericalUnderflowError",
+      "msg": "Numerical Underflow Error"
+    },
+    {
+      "code": 6006,
+      "name": "NumericalOverflowError",
+      "msg": "Numerical Overflow Error"
+    },
+    {
+      "code": 6007,
+      "name": "NumericalDivisionError",
+      "msg": "Numerical Division Error"
     }
   ]
 };

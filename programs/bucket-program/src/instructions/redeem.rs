@@ -41,7 +41,7 @@ pub fn handle<'info>(
     let remaining_accounts_iter = &mut ctx.remaining_accounts.iter();
     let precision = 6;
     let num_tokens = unwrap_int!(num_remaining_accounts.checked_div(5));
-    let mut total_collateral_sum: i128 = 0;
+    let mut total_collateral_sum: u64 = 0;
     for _i in 0..num_tokens {
         let asset: RedeemAsset = Accounts::try_accounts(
             &crate::ID,
@@ -57,28 +57,34 @@ pub fn handle<'info>(
         // returns 1_000_00
         let collateral_price = get_oracle_price(&ctx.accounts.oracle, precision);
 
-        // might not work for values < 1 where dividing by decimals might lead to 0 -> multiply by 10 and divide by 10 later
         let collateral_amount = asset.crate_collateral.amount;
-        let collateral_sum = (collateral_amount as i128)
+        let collateral_sum = (collateral_amount as u64)
             .checked_mul(collateral_price)
             .ok_or(ErrorCode::NumericalOverflowError)?
-            .checked_div(10_i128.pow(collateral_mint_decimals as u32))
+            .checked_div(10_u64.pow(collateral_mint_decimals as u32))
             .ok_or(ErrorCode::NumericalUnderflowError)?;
         total_collateral_sum = total_collateral_sum.checked_add(collateral_sum).unwrap();
     }
 
-    // multiply by 10^6 for division by bucket supply
-    let total_collateral_sum = total_collateral_sum.checked_mul(10_i128.pow(6)).unwrap();
-    let bucket_supply = 3_000_000; // ctx.accounts.bucket.current_supply
-                                   //let total_collateral_sum: i32 = 3_000_000; // hard_coded sum to simulate
+    // multiply by 10^6 for division by bucket supply -> change to 10^8 (precision+2) and divide by same amount later to account for amounts < 1 USD
+    let underflow_buffer = 2;
+    let total_collateral_sum = total_collateral_sum
+        .checked_mul(10_u64.pow(precision + underflow_buffer))
+        .unwrap();
+    let bucket_supply = &ctx.accounts.common.crate_mint.supply; // 3_000_000; // ctx.accounts.bucket.current_supply
 
     // total_collateral_sum = 3_000_000_000_000
-    let price_per_bucket = total_collateral_sum.checked_div(bucket_supply).unwrap() as u64;
+    let price_per_bucket = (total_collateral_sum as u64)
+        .checked_div(*bucket_supply)
+        .unwrap();
     // also has to equal 1_000_000 for tests to pass
     let redeemable_amount = redeem_amount
-        .checked_mul(cmp::min(1_000_000, price_per_bucket)) // cap at 1-1 ratio for now -> change 1_000_000 to redeem_amount
+        .checked_mul(cmp::min(
+            10_u64.pow(precision + underflow_buffer),
+            price_per_bucket,
+        )) // cap at 1-1 ratio for now
         .ok_or(ErrorCode::NumericalOverflowError)?
-        .checked_div(10_u64.pow(precision))
+        .checked_div(10_u64.pow(precision + underflow_buffer))
         .ok_or(ErrorCode::NumericalUnderflowError)?;
     let remaining_accounts_iter = &mut ctx.remaining_accounts.iter(); // prev iter depletes after 1st for loop
 
@@ -98,7 +104,7 @@ pub fn handle<'info>(
         // compute an equal share of each collateral based on each's supply. over time,
         // this piece of logic will become increasingly complex to account for select
         // token fanouts and varying prices of the collateral.
-        let share: u64 = unwrap_int!((asset.crate_collateral.amount as u128)
+        let share: u64 = unwrap_int!((asset.crate_collateral.amount as u64)
             .checked_mul(redeemable_amount.into())
             .and_then(|num| num.checked_div(ctx.accounts.common.crate_mint.supply.into()))
             .and_then(|num| num.to_u64()));
