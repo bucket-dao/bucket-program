@@ -2,7 +2,7 @@
   "scripts": {
     "setup": "sh ./scripts/setup.sh",
     "cp-idl": "./scripts/cp_idl.sh",
-    "upgrade-devnet": "./scripts/deploy.sh 0 devnet",
+    "upgrade-devnet": "./scripts/deploy.sh 1 devnet",
     "upgrade-mainnet": "./scripts/deploy.sh 1 mainnet-beta",
     "get-pk": "./scripts/get_pk.sh",
     "test": "echo \"Error: no test specified\" && exit 1"
