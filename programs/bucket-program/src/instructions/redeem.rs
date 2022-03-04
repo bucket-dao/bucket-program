@@ -49,14 +49,8 @@ pub fn handle<'info>(
             &[],
         )?;
 
-        // & or not?
-        let _collateral_mint_supply = asset.collateral_mint.supply;
-
         let collateral_mint_decimals = asset.collateral_mint.decimals;
-
-        // returns 1_000_00
         let collateral_price = get_oracle_price(&ctx.accounts.oracle, precision);
-
         let collateral_amount = asset.crate_collateral.amount;
         let collateral_sum = (collateral_amount as u64)
             .checked_mul(collateral_price)
@@ -66,27 +60,26 @@ pub fn handle<'info>(
         total_collateral_sum = total_collateral_sum.checked_add(collateral_sum).unwrap();
     }
 
-    // multiply by 10^6 for division by bucket supply -> change to 10^8 (precision+2) and divide by same amount later to account for amounts < 1 USD
-    let underflow_buffer = 2;
+    let precision_buffer = 2;
     let total_collateral_sum = total_collateral_sum
-        .checked_mul(10_u64.pow(precision + underflow_buffer))
+        .checked_mul(10_u64.pow(precision + precision_buffer))
         .unwrap();
-    let bucket_supply = &ctx.accounts.common.crate_mint.supply; // 3_000_000; // ctx.accounts.bucket.current_supply
+    let bucket_supply = &ctx.accounts.common.crate_mint.supply;
 
-    // total_collateral_sum = 3_000_000_000_000
     let price_per_bucket = (total_collateral_sum as u64)
         .checked_div(*bucket_supply)
         .unwrap();
-    // also has to equal 1_000_000 for tests to pass
+
+    // cap at 1-1 ratio for now
     let redeemable_amount = redeem_amount
         .checked_mul(cmp::min(
-            10_u64.pow(precision + underflow_buffer),
+            10_u64.pow(precision + precision_buffer),
             price_per_bucket,
-        )) // cap at 1-1 ratio for now
+        ))
         .ok_or(ErrorCode::NumericalOverflowError)?
-        .checked_div(10_u64.pow(precision + underflow_buffer))
+        .checked_div(10_u64.pow(precision + precision_buffer))
         .ok_or(ErrorCode::NumericalUnderflowError)?;
-    let remaining_accounts_iter = &mut ctx.remaining_accounts.iter(); // prev iter depletes after 1st for loop
+    let remaining_accounts_iter = &mut ctx.remaining_accounts.iter();
 
     let withdraw_authority_signer_seeds: &[&[&[u8]]] =
         &[&[b"withdraw", &[ctx.accounts.withdraw_authority.bump]]];
