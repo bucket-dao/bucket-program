@@ -5,10 +5,7 @@ class MyDocument extends Document {
     return (
       <Html>
         <Head>
-          <meta
-            name="description"
-            content="This site will fly high 🦤"
-          />
+          <meta name="description" content="This site will fly high 🦤" />
           <link rel="icon" href="/favicon.ico" />
 
           <link
@@ -31,16 +28,12 @@ class MyDocument extends Document {
           <link rel="manifest" href="/site.webmanifest" />
           {/* <meta name="theme-color" content="#ffffff" /> */}
 
-          {/* <link rel="preconnect" href="https://fonts.googleapis.com" />
+          <link rel="preconnect" href="https://fonts.googleapis.com" />
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
           <link
-            rel="preconnect"
-            href="https://fonts.gstatic.com"
-            crossOrigin="crossOrigin"
-          />
-          <link
-            href="https://fonts.googleapis.com/css2?family=Oxanium:wght@500&display=swap"
+            href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@100;200;300;400;500;600;700;800;900&display=swap"
             rel="stylesheet"
-          /> */}
+          />
         </Head>
         <body>
           <Main />

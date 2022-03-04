@@ -27,11 +27,13 @@ function MyApp({ Component, pageProps }: AppProps) {
   const endpoint = useMemo(() => _endpoint, []);
 
   return (
-    <ConnectionProvider endpoint={endpoint}>
-      <WalletProvider>
-        <Component {...pageProps} />
-      </WalletProvider>
-    </ConnectionProvider>
+    <div className="bg-transparent">
+      <ConnectionProvider endpoint={endpoint}>
+        <WalletProvider>
+          <Component {...pageProps} />
+        </WalletProvider>
+      </ConnectionProvider>
+    </div>
   );
 }
 

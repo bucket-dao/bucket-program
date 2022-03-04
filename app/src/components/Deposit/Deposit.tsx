@@ -74,9 +74,9 @@ const Deposit = ({
   };
 
   return (
-    <div className="rounded-lg shadow-lg  mx-auto hover:shadow-2xl bg-white p-6 w-full max-w-lg ">
+    <div className="rounded-lg shadow-lg border-black border mx-auto  bg-white p-6 w-full max-w-lg ">
       <div>You pay</div>
-      <div className="rounded-lg p-2 mt-4 bg-gray-200 grid grid-cols-3 gap-4">
+      <div className="rounded-lg mt-4 bg-gray-200 grid grid-cols-3 gap-4 ">
         {collateralTokens && (
           <Dropdown
             collateralMint={collateralMint}
@@ -85,7 +85,7 @@ const Deposit = ({
             setCurrentMaxAmount={setCurrentMaxAmount}
           />
         )}
-        <div className="col-span-2  rounded-lg">
+        <div className="col-span-2  rounded-lg pt-1">
           <input
             className="p-3 bg-transparent text-xl font-bold outline-none text-right w-full"
             value={depositAmount}
@@ -98,7 +98,7 @@ const Deposit = ({
       </div>
       <div className="h-4"></div>
       <div>You receive</div>
-      <div className="rounded-lg p-2 my-4 bg-gray-200 grid grid-cols-3 gap-4">
+      <div className="rounded-lg my-4 bg-gray-200 grid grid-cols-3 gap-4 pt-1">
         <div className="p-3">🪣 BUCK</div>
         <div className="col-span-2  rounded-lg">
           <div className="p-3 bg-transparent text-xl font-bold outline-none text-right w-full">
@@ -109,7 +109,7 @@ const Deposit = ({
       <div className="h-4"></div>
       <div
         onClick={deposit}
-        className="w-32 cursor-pointer rounded-lg text-center text-white mx-auto p-4 bg-gray-600"
+        className="text-xl pb-2 pt-3 cursor-pointer border border-black rounded-lg text-center  mx-auto bg-white hover:bg-gray-100"
       >
         Deposit
       </div>

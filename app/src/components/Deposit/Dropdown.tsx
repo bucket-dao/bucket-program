@@ -35,11 +35,11 @@ export default function Dropdown({
   return (
     <Menu as="div" className="relative inline-block text-left h-full ">
       <div className="h-full">
-        <Menu.Button className=" w-full h-full text-left font-bold rounded-lg p-3 hover:bg-gray-300 flex justify-between">
+        <Menu.Button className=" w-full h-full text-left font-bold rounded-lg p-3 pt-4 hover:bg-gray-300 flex justify-between">
           <div>$ {mintToSymbol[collateralMint]}</div>
           <div>
             <ChevronDownIcon
-              className="-mr-1 ml-2 mt-1 h-5 w-5"
+              className="-mr-1 ml-2 mt-1 text-black h-5 w-5"
               aria-hidden="true"
             />
           </div>
@@ -56,7 +56,7 @@ export default function Dropdown({
         leaveTo="transform opacity-0 scale-95"
       >
         <Menu.Items className="origin-top-right absolute left-0 w-full rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
-          <div className="p-2">
+          <div className="p-2 ">
             {allCollateralMints.length > 0 &&
               allCollateralMints.map((token: any, key: number) => {
                 const tokenInfo = token.account.data.parsed.info;

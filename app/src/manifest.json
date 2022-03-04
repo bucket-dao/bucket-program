@@ -3,8 +3,8 @@
   "short_name": "Bucket",
   "display": "standalone",
   "start_url": "./",
-  "theme_color": "#002140",
-  "background_color": "#001529",
+  "theme_color": "#FFFFFF",
+  "background_color": "#FFFFFF",
   "icons": [
     {
       "src": "icons/icon-192x192.png",

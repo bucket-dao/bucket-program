@@ -7,7 +7,7 @@ import { shortenAddress } from "../../utils/utils";
 const Navbar = () => {
   const { publicKey } = useWallet();
   return (
-    <div className="navbar w-full mb-2 text-neutral-content rounded-box">
+    <div className="navbar w-full mb-2 rounded-box">
       <div className="flex-none">
         <button className="btn btn-square btn-ghost">
           <span className="text-4xl">🪣</span>
