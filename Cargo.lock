@@ -520,10 +520,10 @@ dependencies = [
  "anchor-lang 0.20.1",
  "anchor-spl",
  "bytemuck",
- "crate-redeem-in-kind",
  "crate-token",
  "num-traits",
  "pyth-client",
+ "stable-swap-anchor",
  "vipers",
 ]
 
@@ -614,20 +614,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "95059428f66df56b63431fdb4e1947ed2190586af5c5a8a8b71122bdf5a7f469"
 dependencies = [
  "libc",
-]
-
-[[package]]
-name = "crate-redeem-in-kind"
-version = "0.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3c9d54c64f4e1af62aeec0a9e894fcd2979e62e486aba56e4ffc1c8ad1f2224a"
-dependencies = [
- "anchor-lang 0.20.1",
- "anchor-spl",
- "crate-token",
- "num-traits",
- "static-pubkey",
- "vipers",
 ]
 
 [[package]]
@@ -1398,6 +1384,30 @@ dependencies = [
  "num-traits",
  "num_enum",
  "solana-program",
+ "thiserror",
+]
+
+[[package]]
+name = "stable-swap-anchor"
+version = "1.6.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dc17dafa526ed8c9443cb33206bca24013ac2f0cb7e4fb405b3a90cdc83b02ff"
+dependencies = [
+ "anchor-lang 0.20.1",
+ "stable-swap-client",
+]
+
+[[package]]
+name = "stable-swap-client"
+version = "1.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e03e808edaf68a683d64b6582d3b184065768f0bd9dcb2338ee8d5f3e3e1e4d2"
+dependencies = [
+ "arrayref",
+ "num-derive",
+ "num-traits",
+ "solana-program",
+ "spl-token",
  "thiserror",
 ]
 
