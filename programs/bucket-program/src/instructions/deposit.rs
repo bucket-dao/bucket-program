@@ -3,7 +3,7 @@ use {
         context::Deposit,
         error::ErrorCode,
         instructions::pyth_client::get_oracle_price,
-        util::{is_collateral_authorized, scale_mint_decimals},
+        util::{is_collateral_authorized},
     },
     anchor_lang::prelude::*,
     anchor_spl::token::transfer,
@@ -32,18 +32,11 @@ pub fn handle(ctx: Context<Deposit>, deposit_amount: u64) -> ProgramResult {
         .checked_div(10_u64.pow(precision))
         .unwrap();
 
-    let scaled_deposit_amount: u64 = scale_mint_decimals(
-        issue_amount.try_into().unwrap(),
-        ctx.accounts.collateral_mint.decimals,
-        ctx.accounts.common.crate_mint.decimals,
-    )
-    .unwrap();
-
     issue(
         ctx.accounts
             .into_issue_reserve_context()
             .with_signer(&[&[b"issue", &[ctx.accounts.issue_authority.bump]]]),
-        scaled_deposit_amount,
+issue_amount.try_into().unwrap(),
     )?;
 
     Ok(())

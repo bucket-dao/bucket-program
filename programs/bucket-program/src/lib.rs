@@ -16,6 +16,7 @@ declare_id!("HHqKhZs3ReukRtGqCrj1DJoSknWuCddQ3oyuQY5Uhf5P");
 pub mod bucket_program {
     use super::*;
 
+    /// this instruction initializes the bucket PDA required for the rest of the instructions in this file.
     pub fn create_bucket(
         ctx: Context<CreateBucket>,
         bucket_bump: u8,
@@ -34,6 +35,11 @@ pub mod bucket_program {
         Ok(())
     }
 
+    /// this instruction changes the entity that has the authority to invoke the rebalance instruction.
+    /// this prevents a compromised or incapacitated rebalance_authority from halting the bucket's
+    /// continued operation.
+    ///
+    /// instruction privilege: only bucket authority can call this instruction
     pub fn update_rebalance_authority(
         ctx: Context<AuthorizedUpdate>,
         rebalance_authority: Pubkey,
@@ -43,6 +49,13 @@ pub mod bucket_program {
         Ok(())
     }
 
+    /// this instruction authorizes a new collateral mint for a given bucket. after this operation,
+    /// anyone will be able to deposit tokens of this mint and receive the relative amount of
+    /// reserve in return. due to the nature of integer math, it's possible the actual allocation
+    /// of this mint will be off by a few basis points. in that case, the bucket authority can call
+    /// the set_collateral_allocations instruction to absolutely set allocations.
+    ///
+    /// instruction privilege: only bucket authority can call this instruction
     pub fn authorize_collateral(
         ctx: Context<AuthorizedUpdate>,
         mint: Pubkey,
@@ -53,13 +66,12 @@ pub mod bucket_program {
         Ok(())
     }
 
-    // remove collateral from this list of approved should we extend this instruction
-    // to swap the de-authorized collateral mint to an authorized collateral mint?
-    // if not, users will still receive this mint on redeem without being able to deposit.
-    // ultimately, this requirements for this instruction depend on the use case for
-    // removing a mint, e.g. a collateral mint is determined too risky, sus, etc.
-    // in this case, it's likely we would want to empty this mint from  the pool.
-    // alt, the rebalance instruction _could_ help us, depending on implementation.
+    /// remove a collateral mint from the bucket. this instruction will prevent entities from
+    /// depositing anymore tokens with the given mint. however, this instruction will not
+    /// remove tokens of this mint from the bucket. instead, the rebalance function should
+    /// handle this scenario and update the collateral allocation accordingly.
+    ///
+    /// instruction privilege: only bucket authority can call this instruction
     pub fn remove_collateral(
         ctx: Context<AuthorizedUpdate>,
         mint: Pubkey
@@ -69,6 +81,12 @@ pub mod bucket_program {
         Ok(())
     }
 
+    /// this instruction absolutely sets per-collateral allocations, e.g. the authority wants
+    /// to set mintA to 60%, mintB to 30%, and mintC to 10%. this instruction does not allow
+    /// the authority to add or remove collateral. bulk modify operations are error prone, and
+    /// we prefer to reduce the possibility for a risky change.
+    ///
+    /// instruction privilege: only bucket authority can call this instruction
     pub fn set_collateral_allocations(
         ctx: Context<AuthorizedUpdate>,
         allocations: Vec<Collateral>
@@ -78,6 +96,16 @@ pub mod bucket_program {
         Ok(())
     }
 
+    /// this instruction will transfer a certain number of the signer's authorized collateral tokens
+    /// to the bucket. in return, it will mint an equivalent number of reserve tokens to the signer
+    /// based on the relative value of collateral tokens depossited.
+    ///
+    /// for example: an entity wants to deposit 10 mintA tokens. let's assume a roughly 1-1 exchange
+    /// rate for mintA to reserve tokens. in this case, this instruction will mint 10 reserve tokens
+    /// to the entity. since the reserve token is a standard SPL token, the entity is then free to
+    /// use the reserve token across the Solana ecosystem.
+    ///
+    /// instruction privilege: anyone can call this instruction
     pub fn deposit(
         ctx: Context<Deposit>,
         deposit_amount: u64,
@@ -87,6 +115,17 @@ pub mod bucket_program {
         Ok(())
     }
 
+    /// this instruction will burn a signer's reserve token and redeem a proportional share of
+    /// collateral tokens from the bucket. because tokens are burned as deposited, the actual supply
+    /// of return tokens is adjusted based on the available collateral. thus, the reserve tokens value
+    /// is completely derived from the values of the underlying collateral.
+    ///
+    /// for example: an entity wants to redeem 10 reserve tokens, and the bucket contains 60 mintA tokens,
+    /// 30 mintB tokens, and 10 mintC tokens. Assuming roughly equal value of all mints,
+    /// i.e. dollar pegged stable coins, the entity will recieve 6 mintA tokens, 2 mintB tokens,
+    /// and 1 mintC token.
+    ///
+    /// instruction privilege: anyone can call this instruction
     pub fn redeem<'info>(
         ctx: Context<'_, '_, '_, 'info, Redeem<'info>>,
         withdraw_amount: u64,

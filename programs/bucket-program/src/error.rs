@@ -14,6 +14,8 @@ pub enum ErrorCode {
     CollateralDoesNotExistError,
     #[msg("Collateral size limits exceeded")]
     CollateralSizeLimitsExceeded,
+    #[msg("Must maintain at least 1 approved collateral mint")]
+    MinCollateralError,
     #[msg("Numerical Underflow Error")]
     NumericalUnderflowError,
     #[msg("Numerical Overflow Error")]

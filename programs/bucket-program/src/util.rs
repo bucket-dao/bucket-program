@@ -1,7 +1,6 @@
 use {
-    crate::{constant::MAX_BASIS_POINTS, error::ErrorCode, state::bucket::Collateral},
     anchor_lang::prelude::*,
-    std::cmp,
+    crate::{constant::MAX_BASIS_POINTS, error::ErrorCode, state::bucket::Collateral},
 };
 
 pub fn sum_allocations(collateral: &Vec<Collateral>) -> std::result::Result<u16, ErrorCode> {
@@ -25,16 +24,6 @@ pub fn sum_allocations(collateral: &Vec<Collateral>) -> std::result::Result<u16,
 
 pub fn is_collateral_authorized(collateral: &Vec<Collateral>, mint: Pubkey) -> bool {
     return collateral.iter().filter(|&el| el.mint == mint).count() == 1;
-}
-
-pub fn scale_mint_decimals(amount: u64, source_decimals: u8, dest_decimals: u8) -> Option<u64> {
-    match dest_decimals.cmp(&source_decimals) {
-        cmp::Ordering::Equal => amount.into(),
-        cmp::Ordering::Less => amount
-            .checked_mul(10u64.checked_pow(source_decimals.checked_sub(dest_decimals)?.into())?),
-        cmp::Ordering::Greater => amount
-            .checked_div(10u64.checked_pow(dest_decimals.checked_sub(source_decimals)?.into())?),
-    }
 }
 
 pub fn get_collateral_idx(

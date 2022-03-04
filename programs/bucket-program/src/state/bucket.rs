@@ -12,10 +12,6 @@ use {
 /// 🪣
 ///
 /// Lets users print $BUCKET or redeem $BUCKET for its underlying.
-///
-/// rebalancing authority -> person who can invoke rebalance instruction
-/// autority can change rebalance authority
-/// how to
 #[account]
 #[derive(Debug, Default, PartialEq)]
 pub struct Bucket {
@@ -38,8 +34,8 @@ pub struct Bucket {
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Default, PartialEq, Debug)]
 pub struct Collateral {
     pub mint: Pubkey,
-    // use bps for allocation %. requires a u16 (2^16 => 65,536) since max bps is 10000.
-    // as ref, 100 bps => 1%, 1000 => 10%, 10000 => 100%
+    /// use bps for allocation %. requires a u16 (2^16 => 65,536) since max bps is 10000.
+    /// as ref, 100 bps => 1%, 1000 => 10%, 10000 => 100%
     pub allocation: u16,
 }
 
@@ -60,23 +56,28 @@ impl Bucket {
     }
 
     pub fn set_collateral_allocations(&mut self, allocations: &Vec<Collateral>) -> ProgramResult {
-        let mut new_allocation_sum: u16 = 0;
+        // keep a running sum of the new allocation total. at the end of this function, we will
+        // verify that the allocations sum to the full 10000 bps.
+        let mut running_updated_allocation: u16 = 0;
 
-        // since we only loop through mints in the current collateral
-        // list, we ignore any additional mints. error will be caught
-        // in the new allocation sum check.
-        for mut col in self.collateral.iter_mut() {
-            let index = get_collateral_idx(&allocations, col.mint)?;
+        // since we only loop through list of currently authorized mints, we ignore any additional mints.
+        // error will be caught in the new allocation sum check.
+        for mut collateral in self.collateral.iter_mut() {
+            // match the current collateral to the collateral in the updated allocations vec
+            let updated_collateral_allocation =
+                allocations[get_collateral_idx(&allocations, collateral.mint)?].allocation;
 
-            let new_allocation = allocations[index].allocation;
-            col.allocation = new_allocation;
-            new_allocation_sum = new_allocation_sum
-                .checked_add(new_allocation)
+            // update the running sum of updated allocation
+            running_updated_allocation = running_updated_allocation
+                .checked_add(updated_collateral_allocation)
                 .ok_or(ErrorCode::NumericalOverflowError)?;
+
+            // set the current collateral's updated allocation
+            collateral.allocation = updated_collateral_allocation;
         }
 
         invariant!(
-            new_allocation_sum == MAX_BASIS_POINTS,
+            running_updated_allocation == MAX_BASIS_POINTS,
             ErrorCode::AllocationBpsError
         );
 
@@ -84,22 +85,54 @@ impl Bucket {
     }
 
     pub fn remove_collateral(&mut self, mint: Pubkey) -> ProgramResult {
-        let collateral_idx = get_collateral_idx(&self.collateral, mint)?;
+        // prevent authority from removing all approved collateral mints
+        invariant!(self.collateral.len() > 1, ErrorCode::MinCollateralError);
 
-        let removed_collateral = self.collateral.remove(collateral_idx);
-        msg!("removing collateral: {:?}", removed_collateral);
+        // remove the collateral element from the current vec based on the mint parameter
+        let removed_collateral = self
+            .collateral
+            .remove(get_collateral_idx(&self.collateral, mint)?);
+        msg!(
+            "requesting to remove collateral with mint: {}. actually removed collateral: {:?}",
+            mint,
+            removed_collateral
+        );
 
-        let mut running_alloc_sum: u64 = 0;
-        for mut col in self.collateral.iter_mut() {
-            let curr_alloc: u64 = col.allocation as u64;
+        let mut running_allocation_sum: u64 = 0;
+        for mut collateral in self.collateral.iter_mut() {
+            let current_allocation: u64 = collateral.allocation as u64;
             let removed_allocation: u64 = removed_collateral.allocation as u64;
 
-            // curr_alloc + ((curr_alloc * alloc_to_remove) / (max_basis_points - alloc_to_remove))
-            let curr_alloc_mult_new_alloc = curr_alloc
+            // we will proportionally redistribute the removed collateral's allocation to the remaining
+            // collateral in the pool. to explore how this works, let's consider an example.
+            //
+            // let's say there are currently 3 collaterals: mintA with 60%, mintB with 30%, and mintC
+            // with 10% of the allocation, respectively. say we want to remove mintC from the collateral.
+            // as stated above, mintC is currently 10% or 1_000 bps of the total allocation. when we remove
+            // mintC, we still want the total allocation to sum to 100% or 10_000 bps. so, we need to
+            // redistribute how much of mintC's allocation is distributed to mintA and mintB. we will use
+            // the following expression to do this:
+            //
+            // mintN_i+1_allocation = mintN_i_allocation + ((mintN_i_allocation * mintM_i_allocation) / (max_basis_points - mintM_i_allocation)),
+            // where mintM_i_allocation is the allocation of the removed collateral.
+            //
+            // let's consider what this means in numeric terms from our example above:
+            // mintA_i+1_allocation = mintA_i_allocation + ((mintA_i_allocation * mintC_i_allocation) / (max_basis_points - mintC_i_allocation))
+            //                      = 6_000 + ((6_000 * 1_000) / (10_000 - 1_000))
+            //                      = 6_000 + (6_000_000 / 9_000)
+            //                      = 666 (666.67 with decimals)
+            //
+            // mintB_i+1_allocation = mintB_i_allocation + ((mintB_i_allocation * mintC_i_allocation) / (max_basis_points - mintC_i_allocation))
+            //                      = 3_000 + ((3_000 * 1_000) / (10_000 - 1_000))
+            //                      = 3_000 + (3_000_000 / 9_000)
+            //                      = 333 (333.33 with decimals)
+            //
+            // together, mintA_i+1_allocation + mintB_i+1_allocation should be equal to the max basis points of 10_000. however,
+            // we can see that a loss of decimal precision will result in a slightly inaccurate result. so, we will also keep track
+            // of these remainders. discussed further in comments below.
+            let change_current_in_allocation = current_allocation
                 .checked_mul(removed_allocation)
-                .ok_or(ErrorCode::NumericalOverflowError)?;
-
-            let change_in_alloc = curr_alloc_mult_new_alloc
+                .ok_or(ErrorCode::NumericalOverflowError)?
                 .checked_div(
                     (MAX_BASIS_POINTS as u64)
                         .checked_sub(removed_allocation)
@@ -107,43 +140,41 @@ impl Bucket {
                 )
                 .ok_or(ErrorCode::NumericalDivisionError)?;
 
-            let updated_alloc: u16 = curr_alloc
-                .checked_add(change_in_alloc)
+            // update the current collateral's allocation
+            collateral.allocation = current_allocation
+                .checked_add(change_current_in_allocation)
                 .ok_or(ErrorCode::NumericalOverflowError)?
                 .try_into()
                 .unwrap();
 
             msg!(
-                "mint: {} // curr_alloc: {} // curr_alloc_mult_new_alloc: {} // change_in_alloc: {} // updated_allocation: {}",
-                col.mint,
-                curr_alloc,
-                curr_alloc_mult_new_alloc,
-                change_in_alloc,
-                updated_alloc
+                "mint {} with allocation {} is changing by {} to {}",
+                collateral.mint,
+                current_allocation,
+                change_current_in_allocation,
+                collateral.allocation
             );
 
-            col.allocation = updated_alloc;
-
-            running_alloc_sum = running_alloc_sum
-                .checked_add(updated_alloc.try_into().unwrap())
+            // update the running sum of collateral allocations
+            running_allocation_sum = running_allocation_sum
+                .checked_add(collateral.allocation.try_into().unwrap())
                 .ok_or(ErrorCode::NumericalOverflowError)?;
         }
 
-        let max_bps_running_alloc_diff: u64 = (MAX_BASIS_POINTS as u64)
-            .checked_sub(running_alloc_sum)
+        // check if there is a discrepancy between expected max basis points and the updated allocation's sum.
+        // if so, we want to resolve by adding the discrepancy to some collateral's allocation.
+        let bps_discrepancy: u64 = (MAX_BASIS_POINTS as u64)
+            .checked_sub(running_allocation_sum)
             .ok_or(ErrorCode::NumericalUnderflowError)?;
 
-        msg!(
-            "diff between max bps and running alloc: {}",
-            max_bps_running_alloc_diff
-        );
+        if bps_discrepancy > 0 {
+            msg!("adjusting allocation amounts so that sum equals max bps");
 
-        if max_bps_running_alloc_diff > 0 {
-            // add back any remaining allocation needed to reach 10000 to first value
+            // add remaining allocation discrepancy to first authorized collateral
             let mut collateral = &mut self.collateral[0];
             collateral.allocation = collateral
                 .allocation
-                .checked_add(max_bps_running_alloc_diff.try_into().unwrap())
+                .checked_add(bps_discrepancy.try_into().unwrap())
                 .ok_or(ErrorCode::NumericalOverflowError)?;
         }
 
@@ -161,42 +192,55 @@ impl Bucket {
             ErrorCode::CollateralAlreadyAuthorizedError
         );
 
-        // acutal constraint is 10000 collaterals because that would be 1 bps/collateral.
-        // however, due to vec implementation, account size limitations prevent us from
-        // hitting this upper bound. someting to consider in the future if the design changes.
+        // the acutal constraint is 10_000 collaterals because that would mean each collateral
+        // would have a 1 bps allocation. however, the current vec implementation means that the
+        // solana account size limitation will prevent us from hitting this upper bound. we want
+        // to consider this constraint in the future if the design changes.
         invariant!(
             self.collateral.len() <= MAX_COLLATERAL_ELEMENTS,
             ErrorCode::CollateralSizeLimitsExceeded
         );
 
-        let current_allocation: u16 = sum_allocations(&self.collateral)?;
-        // if current allocation is non-zero, new alloc cannot === max_bps
-        if current_allocation > 0 && allocation == MAX_BASIS_POINTS {
+        let current_collateral_allocation: u16 = sum_allocations(&self.collateral)?;
+        // if the current collateral allocation is non-zero, new alloc cannot equal max bps.
+        // otherwise, at least 1 other authorized collateral's allocation would be set to zero.
+        if current_collateral_allocation > 0 && allocation == MAX_BASIS_POINTS {
             msg!("Only the first collateral can have max allocation bps");
             return Err(ErrorCode::AllocationBpsError.into());
         }
 
-        let new_allocation: u16 = current_allocation
-            .checked_add(allocation)
-            .ok_or(ErrorCode::NumericalOverflowError)?;
-
+        // due to loss of precision, keep track of division operation remainder. this value will later
+        // be used to adjust allocations so that the allocation sum is equal to max basis points.
         let mut running_remainder: u64 = 0;
 
-        // new alloc already over max bps. take difference between max and new alloc,
-        // subtract that proportionally from existing allocations
-        if new_allocation > MAX_BASIS_POINTS {
-            for mut col in self.collateral.iter_mut() {
-                let curr_alloc_64: u64 = col.allocation as u64;
+        // the updated allocation with the newly proposed collateral. if this value is greater than
+        // max bps, we will proportionally subtract from existing collateral to make room for the
+        // new collateral's allocation.
+        let allocation_with_new_mint: u16 = current_collateral_allocation
+            .checked_add(allocation)
+            .ok_or(ErrorCode::NumericalOverflowError)?;
+        if allocation_with_new_mint > MAX_BASIS_POINTS {
+            for mut collateral in self.collateral.iter_mut() {
+                let current_allocation_64: u64 = collateral.allocation as u64;
 
-                let curr_alloc_mult_new_alloc = curr_alloc_64
+                let current_and_new_allocation = current_allocation_64
                     .checked_mul(allocation as u64)
                     .ok_or(ErrorCode::NumericalOverflowError)?;
 
-                // calculate proportional reduction of current collateral allocation
-                // based on new allocation amount
-                let updated_alloc: u16 = curr_alloc_64
+                running_remainder = running_remainder
+                    .checked_add(
+                        // capture decimals lost when dividing by MAX_BASIS_POINTS
+                        current_and_new_allocation
+                            .checked_rem(MAX_BASIS_POINTS as u64)
+                            .ok_or(ErrorCode::NumericalDivisionError)?,
+                    )
+                    .ok_or(ErrorCode::NumericalOverflowError)?;
+
+                // calculate and set the proportional reduction of current collateral allocation based
+                // on new allocation amount.
+                collateral.allocation = current_allocation_64
                     .checked_sub(
-                        curr_alloc_mult_new_alloc
+                        current_and_new_allocation
                             .checked_div(MAX_BASIS_POINTS as u64)
                             .ok_or(ErrorCode::NumericalDivisionError)?,
                     )
@@ -204,29 +248,16 @@ impl Bucket {
                     .try_into()
                     .unwrap();
 
-                col.allocation = updated_alloc;
-
-                // at the end, we will adjust last element's allocation due to any loss
-                // in precision from dividing by integers.
-                running_remainder = running_remainder
-                    .checked_add(
-                        // capture decimals lost when dividing by MAX_BASIS_POINTS;
-                        curr_alloc_mult_new_alloc
-                            .checked_rem(MAX_BASIS_POINTS as u64)
-                            .ok_or(ErrorCode::NumericalDivisionError)?,
-                    )
-                    .ok_or(ErrorCode::NumericalOverflowError)?;
-
                 msg!(
-                    "mint: {} // running_remainder: {} // updated_alloc: {}",
-                    col.mint,
+                    "collateral mint {} has an updated allocation of {}. running remainder now totals = {}",
+                    collateral.mint,
+                    collateral.allocation,
                     running_remainder,
-                    updated_alloc
                 );
             }
         }
 
-        let adj_allocation = allocation
+        let adjusted_allocation = allocation
             .checked_sub(
                 running_remainder
                     .checked_div(get_divisor(running_remainder)?)
@@ -236,15 +267,16 @@ impl Bucket {
             )
             .ok_or(ErrorCode::NumericalOverflowError)?;
 
-        msg!(
-            "adjusted allocation based on running remainder: {}",
-            adj_allocation
-        );
-
         self.collateral.push(Collateral {
             mint,
-            allocation: adj_allocation,
+            allocation: adjusted_allocation,
         });
+
+        msg!(
+            "new collateral's requested allocation = {}. actual allocation = {}.",
+            allocation,
+            adjusted_allocation,
+        );
 
         // catch any invalid updated allocations. we always want allocations to sum to MAX_BASIS_POINTS
         invariant!(
