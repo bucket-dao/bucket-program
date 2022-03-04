@@ -53,7 +53,9 @@ programCommand("show_bucket")
     log.info("Authority:", bucket.authority.toBase58());
     log.info("Collateral size: ", collateral.length);
     log.info("Collateral Contents... ");
-    collateral.forEach((el, idx) => log.info(`idx: ${idx}: ${el}`));
+    collateral.forEach((el, idx) =>
+      log.info(`idx: ${idx}: ${el.mint.toBase58()}`)
+    );
     log.info("===========================================");
   });
 
@@ -192,7 +194,12 @@ programCommand("authorize_collateral")
     const _mint = new PublicKey(mint);
     const _collateral = new PublicKey(collateral);
 
-    await _client.authorizeCollateral(_collateral, +allocation, _mint, walletKeyPair);
+    await _client.authorizeCollateral(
+      _collateral,
+      +allocation,
+      _mint,
+      walletKeyPair
+    );
 
     log.info("===========================================");
     log.info(
@@ -219,8 +226,19 @@ programCommand("deposit")
     const _mint = new PublicKey(mint);
     const _collateral = new PublicKey(collateral);
 
+    // using devnet usdc oracle for now
+    const oracle = new PublicKey(
+      "5U3bH5b6XtG99aVWLqwVzYPVpQiFHytBD68Rz2eFPZd7"
+    );
     const amountU64 = new u64(amount);
-    await _client.deposit(amountU64, _mint, _collateral, crate, walletKeyPair);
+    await _client.deposit(
+      amountU64,
+      _mint,
+      _collateral,
+      crate,
+      walletKeyPair,
+      oracle
+    );
 
     log.info("===========================================");
     log.info(
@@ -261,9 +279,10 @@ programCommand("redeem")
       // authorized collateral list.
       const splitCollaterals = collaterals
         .split(",")
-        .map(el => el.replace(/\s/g, ""));
-      _collaterals = Array.from(new Set(splitCollaterals))
-        .map(el => new PublicKey(el));
+        .map((el) => el.replace(/\s/g, ""));
+      _collaterals = Array.from(new Set(splitCollaterals)).map(
+        (el) => new PublicKey(el)
+      );
     }
 
     invariant(
@@ -271,13 +290,18 @@ programCommand("redeem")
       `No valid collateral mints supplied or found for bucket ${bucket.toBase58()}`
     );
 
+    // using devnet usdc oracle for now
+    const oracle = new PublicKey(
+      "5U3bH5b6XtG99aVWLqwVzYPVpQiFHytBD68Rz2eFPZd7"
+    );
     const amountU64 = new u64(amount);
     await _client.redeem(
       amountU64,
       _mint,
       _collaterals,
       wAuthority,
-      walletKeyPair
+      walletKeyPair,
+      oracle
     );
 
     log.info("===========================================");

@@ -3,7 +3,7 @@
     "version": "0.0.1",
     "license": "MIT",
     "dependencies": {
-        "@bucket-program/sdk": "file:../sdk",
+        "@bucket-program/sdk": "^0.0.4",
         "@project-serum/anchor": "^0.22.0",
         "@solana/spl-token": "^0.1.8",
         "commander": "^8.1.0",
