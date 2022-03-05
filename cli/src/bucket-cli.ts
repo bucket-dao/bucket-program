@@ -79,7 +79,7 @@ programCommand("get_ata_balances")
     const _address = address ? new PublicKey(address) : walletKeyPair.publicKey;
 
     const parsedTokenAccounts = await _client.fetchParsedTokenAccountsByMints(
-      [...collateral.map((el) => new PublicKey(el)), _mint],
+      [...collateral.map((el) => el.mint)],
       _address
     );
 
@@ -228,7 +228,9 @@ programCommand("deposit")
 
     // using devnet usdc oracle for now
     const oracle = new PublicKey(
-      "5U3bH5b6XtG99aVWLqwVzYPVpQiFHytBD68Rz2eFPZd7"
+      // "5U3bH5b6XtG99aVWLqwVzYPVpQiFHytBD68Rz2eFPZd7"
+      // "C5wDxND9E61RZ1wZhaSTWkoA8udumaHnoQY6BBsiaVpn"
+      "38xoQ4oeJCBrcVvca2cGk7iV1dAfrmTR1kmhSCJQ8Jto"
     );
     const amountU64 = new u64(amount);
     await _client.deposit(
@@ -272,7 +274,7 @@ programCommand("redeem")
     let _collaterals: PublicKey[] = [];
     if (collaterals === undefined) {
       const { collateral } = await _client.fetchBucket(bucket);
-      _collaterals = collateral.map((el) => new PublicKey(el));
+      _collaterals = collateral.map((el) => el.mint);
     } else {
       // filter out duplicates; this logic is not necessary in the case where we
       // fetch mints from on-chain because we don't allow duplicate mints in the
@@ -292,7 +294,9 @@ programCommand("redeem")
 
     // using devnet usdc oracle for now
     const oracle = new PublicKey(
-      "5U3bH5b6XtG99aVWLqwVzYPVpQiFHytBD68Rz2eFPZd7"
+      // "5U3bH5b6XtG99aVWLqwVzYPVpQiFHytBD68Rz2eFPZd7"
+      // "C5wDxND9E61RZ1wZhaSTWkoA8udumaHnoQY6BBsiaVpn"
+      "38xoQ4oeJCBrcVvca2cGk7iV1dAfrmTR1kmhSCJQ8Jto"
     );
     const amountU64 = new u64(amount);
     await _client.redeem(
