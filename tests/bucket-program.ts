@@ -8,13 +8,6 @@ import { TokenBalance } from "./common/util";
 import { expectThrowsAsync } from "./common/util";
 import { mockOracle } from "./common/testHelpers";
 
-// add test when collateral decimals is different mint than others
-// add set_collateral_allocations
-// add tests around auth collateral... sufficient?
-// due to account constraints, we cannot get to the point
-//  - where per-collateral share is 1 bps. however, if so, max
-//    collateral in a pool would be 10000.
-
 describe("bucket-program", () => {
   const _provider = anchor.Provider.env();
   const client = new BucketClient(
@@ -37,6 +30,8 @@ describe("bucket-program", () => {
   let collateralA: Keypair;
   let collateralB: Keypair;
   let collateralC: Keypair;
+  let collateralD: Keypair;
+  let collateralE: Keypair;
 
   let userA: Keypair;
   let userB: Keypair;
@@ -71,6 +66,8 @@ describe("bucket-program", () => {
     collateralA = Keypair.generate();
     collateralB = Keypair.generate();
     collateralC = Keypair.generate();
+    collateralD = Keypair.generate();
+    collateralE = Keypair.generate();
 
     // mint collateral A
     await executeTx(
@@ -110,13 +107,45 @@ describe("bucket-program", () => {
       ),
       [authority, collateralC]
     );
+
+    // mint collateral D
+    await executeTx(
+      client.provider.connection,
+      await client.mintTokens(
+        client.provider.connection,
+        authority.publicKey,
+        collateralD.publicKey,
+        authority.publicKey,
+        authority.publicKey
+      ),
+      [authority, collateralD]
+    );
+
+    // mint collateral E
+    await executeTx(
+      client.provider.connection,
+      await client.mintTokens(
+        client.provider.connection,
+        authority.publicKey,
+        collateralE.publicKey,
+        authority.publicKey,
+        authority.publicKey
+      ),
+      [authority, collateralE]
+    );
   });
 
   before("Fund users' accounts with some of each collateral", async () => {
     const fundingAmount = new u64(1_000_000);
 
     for (const user of [userA, userB, userC]) {
-      for (const collateral of [collateralA, collateralB, collateralC]) {
+      for (const collateral of [
+        collateralA,
+        collateralB,
+        collateralC,
+        collateralD,
+        collateralE,
+      ]) {
         console.log(
           `Funding [${user.publicKey.toBase58()}] with ${fundingAmount.toNumber()} of ${collateral.publicKey.toBase58()}`
         );
@@ -147,9 +176,6 @@ describe("bucket-program", () => {
     );
 
     const { bucket: bucketAfter } = await client.fetchBucket(bucketKey);
-    console.log('auth: ', bucketBefore.rebalanceAuthority.toBase58());
-    console.log('auth: ', bucketAfter.rebalanceAuthority.toBase58());
-
     expect(bucketBefore.rebalanceAuthority.toBase58()).to.not.equal(
       bucketAfter.rebalanceAuthority.toBase58()
     );
@@ -184,15 +210,14 @@ describe("bucket-program", () => {
     );
 
     // verify collateral now has 1 collateral mint
-    const { bucket: _bucketA, collateral: collateralListA } =
-      await client.fetchBucket(bucketKey);
+    const { collateral: collateralListA } = await client.fetchBucket(bucketKey);
 
     expect(collateralListA.length).to.equal(1);
-    const collateralAElement = collateralListA[0] as Collateral;
-    expect(collateralAElement.mint.toBase58()).to.equal(
-      collateralA.publicKey.toBase58()
-    );
-    expect(collateralAElement.allocation).to.equal(allocationA);
+    expect(
+      collateralListA.filter(
+        (c) => c.mint.toBase58() === collateralA.publicKey.toBase58()
+      ).length > 0
+    ).to.be.true;
   });
 
   it("Attempt to re-authorize collateral mint", async () => {
@@ -230,21 +255,21 @@ describe("bucket-program", () => {
     );
 
     // verify collateral now has 3 collateral mints
-    const { bucket: _bucketB, collateral: collateralListB } =
-      await client.fetchBucket(bucketKey);
+    const { collateral: collateralListB } = await client.fetchBucket(bucketKey);
 
     expect(collateralListB.length).to.equal(2);
-    const collateralListBElement = collateralListB[1] as Collateral;
-    expect(collateralListBElement.mint.toBase58()).to.equal(
-      collateralB.publicKey.toBase58()
-    );
+    expect(
+      collateralListB.filter(
+        (c) => c.mint.toBase58() === collateralB.publicKey.toBase58()
+      ).length > 0
+    ).to.be.true;
 
     // 10000 bps - 6000 bps
     expect(collateralListB[0].allocation).to.equal(4000);
-    expect(collateralListBElement.allocation).to.equal(allocationB);
+    expect(collateralListB[1].allocation).to.equal(allocationB);
 
     // authorize collateral C
-    const allocationC: number = 2000;
+    const allocationC: number = 1200;
     await client.authorizeCollateral(
       collateralC.publicKey,
       allocationC,
@@ -253,29 +278,239 @@ describe("bucket-program", () => {
     );
 
     // verify collateral now has 3 collateral mints
-    const { bucket: _bucketC, collateral: collateralListC } =
-      await client.fetchBucket(bucketKey);
+    const { collateral: collateralListC } = await client.fetchBucket(bucketKey);
 
     expect(collateralListC.length).to.equal(3);
-    const collateralListCElement = collateralListC[2] as Collateral;
-    expect(collateralListCElement.mint.toBase58()).to.equal(
-      collateralC.publicKey.toBase58()
-    );
+    expect(
+      collateralListC.filter(
+        (c) => c.mint.toBase58() === collateralC.publicKey.toBase58()
+      ).length > 0
+    ).to.be.true;
 
-    // 4000 bps => 40% of new allocation => 4000 - 800 = 3200 bps
-    expect(collateralListC[0].allocation).to.equal(3200);
-    // 6000 bps => 60% of new allocation => 6000 - 1200 = 4800 bps
-    expect(collateralListC[1].allocation).to.equal(4800);
-    expect(collateralListCElement.allocation).to.equal(allocationC);
+    // new alloc => 1200, broken down => 1200 * .4 = 480, 1200 * .6 = 720, respectively
+    // 4000 bps => 40% of new allocation => 4000 - 480 = 3520 bps
+    expect(collateralListC[0].allocation).to.equal(3520);
+    // 6000 bps => 60% of new allocation => 6000 - 720 = 5280 bps
+    expect(collateralListC[1].allocation).to.equal(5280);
+    // 1200 bps
+    expect(collateralListC[2].allocation).to.equal(allocationC);
   });
 
-  // set_collateral_allocations
-  // it("Authority sets collateral directly", async () => {
-    // for (const col of collateralListC as Collateral[]) {
-    //   console.log('mint: ', col.mint.toBase58());
-    //   console.log('alloc: ', col.allocation);
-    // }
-  // });
+  // remove_collateral
+  it("Remove collateral mint", async () => {
+    // verify neither collateral D or E is authorized before executing instruction
+    const { collateral: collateralListBefore } = await client.fetchBucket(
+      bucketKey
+    );
+
+    expect(
+      collateralListBefore.filter(
+        (c) => [
+          collateralD.publicKey.toBase58(),
+          collateralE.publicKey.toBase58(),
+        ].includes(c.mint.toBase58())
+      ).length === 0
+    ).to.be.true;
+
+    // authorize collateral D & E, verify they are in the list of authorized collateral.
+    // no need to check summed allocations since that is verified on-chain.
+    const allocationD: number = 1000;
+    await client.authorizeCollateral(
+      collateralD.publicKey,
+      allocationD,
+      reserve.publicKey,
+      authority
+    );
+
+    const { collateral: collateralListWithD } = await client.fetchBucket(
+      bucketKey
+    );
+
+    expect(collateralListWithD.length).to.equal(4);
+    expect(
+      collateralListWithD.filter(
+        (c) => c.mint.toBase58() === collateralD.publicKey.toBase58()
+      ).length > 0
+    ).to.be.true;
+
+    // authorize collateral E
+    const allocationE: number = 1344;
+    await client.authorizeCollateral(
+      collateralE.publicKey,
+      allocationE,
+      reserve.publicKey,
+      authority
+    );
+
+    const { collateral: collateralListWithE } = await client.fetchBucket(
+      bucketKey
+    );
+
+    expect(collateralListWithE.length).to.equal(5);
+    expect(
+      collateralListWithE.filter(
+        (c) => c.mint.toBase58() === collateralE.publicKey.toBase58()
+      ).length > 0
+    ).to.be.true;
+
+    // ==============================================================
+    // remove and verify collateral D
+    //
+    // when removing collaterals D & E, there is no need to check
+    // summed allocations. that is verified on-chain. instead, we
+    // just will assert that the new collateral lists do not contain
+    // the removed collateral mints.
+    // =============================================================
+    await client.removeCollateral(
+      reserve.publicKey,
+      collateralD.publicKey,
+      authority
+    );
+
+    const { collateral: collateralListWithoutD } = await client.fetchBucket(
+      bucketKey
+    );
+
+    expect(collateralListWithoutD.length).to.equal(4);
+    expect(
+      collateralListWithoutD.filter(
+        (c) => c.mint.toBase58() === collateralD.publicKey.toBase58()
+      ).length === 0
+    ).to.be.true;
+
+    // ==================================================
+    // remove and verify collateral E
+    // ==================================================
+    await client.removeCollateral(
+      reserve.publicKey,
+      collateralE.publicKey,
+      authority
+    );
+
+    const { collateral: collateralListWithoutE } = await client.fetchBucket(
+      bucketKey
+    );
+
+    expect(collateralListWithoutE.length).to.equal(3);
+    expect(
+      collateralListWithoutE.filter(
+        (c) => c.mint.toBase58() === collateralE.publicKey.toBase58()
+      ).length === 0
+    ).to.be.true;
+
+    // ==================================================
+    // print current status of list as a sanity check
+    // ==================================================
+    console.log(
+      `Auhorized collateral after removing mints [${collateralD.publicKey.toBase58()}] and [${collateralE.publicKey.toBase58()}]`
+    );
+    for (const col of collateralListWithoutE as Collateral[]) {
+      console.log("mint: ", col.mint.toBase58());
+      console.log("alloc: ", col.allocation);
+    }
+  });
+
+  it("Authority sets collateral directly, various cases", async () => {
+    // fetch existing collateral
+    const { collateral } = await client.fetchBucket(bucketKey);
+
+    // ========================================================
+    // set with 1 missing mint, verify error
+    // ========================================================
+    expectThrowsAsync(async () => {
+      client.setCollateralAllocations(
+        reserve.publicKey,
+        collateral.slice(1), // remove first element
+        authority
+      );
+    });
+
+    // ========================================================
+    // set with 1 additional mint, all shares equal for 4 mints
+    // ========================================================
+    const equal_allocation = 2500;
+    expectThrowsAsync(async () => {
+      client.setCollateralAllocations(
+        reserve.publicKey,
+        [
+          ...collateral.map((col: Collateral) => {
+            return {
+              mint: col.mint,
+              allocation: equal_allocation,
+            };
+          }),
+          {
+            mint: collateralD.publicKey,
+            allocation: equal_allocation,
+          },
+        ],
+        authority
+      );
+    });
+
+    // ========================================================
+    // set allocations != 10000
+    // ========================================================
+    const newCollateralsAllocationOverMaxBps = [
+      {
+        mint: collateralA.publicKey,
+        allocation: 2000,
+      },
+      {
+        mint: collateralB.publicKey,
+        allocation: 3000,
+      },
+      {
+        mint: collateralC.publicKey,
+        allocation: 5500,
+      },
+    ];
+
+    expectThrowsAsync(async () => {
+      await client.setCollateralAllocations(
+        reserve.publicKey,
+        newCollateralsAllocationOverMaxBps,
+        authority
+      );
+    });
+
+    // ============================================================
+    // set allocations == 10000, verify updated mints & allocations
+    // ============================================================
+    const newCollateralsAllocationValidBps = [
+      {
+        mint: collateralA.publicKey,
+        allocation: 3000,
+      },
+      {
+        mint: collateralB.publicKey,
+        allocation: 3000,
+      },
+      {
+        mint: collateralC.publicKey,
+        allocation: 4000,
+      },
+    ];
+
+    await client.setCollateralAllocations(
+      reserve.publicKey,
+      newCollateralsAllocationValidBps,
+      authority
+    );
+
+    const { collateral: collateralAfterUpdate } = await client.fetchBucket(
+      bucketKey
+    );
+
+    // use loop to check equality instead of direct index checks since order might be different
+    // than what's stored on-chain
+    for (const col of collateralAfterUpdate) {
+      const updatedCollateral = newCollateralsAllocationValidBps.filter(
+        (newCol) => newCol.mint.toBase58() === col.mint.toBase58()
+      )[0];
+      expect(updatedCollateral.allocation).to.equal(col.allocation);
+    }
+  });
 
   it("User A deposits authorized collateral A, issue reserve tokens", async () => {
     // mint collateral and fund depositor ATA with collateral
@@ -392,7 +627,7 @@ describe("bucket-program", () => {
       reserve.publicKey,
       collateralC.publicKey,
       issueAuthority,
-      userC, 
+      userC,
       oracle
     );
 

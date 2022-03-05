@@ -127,6 +127,32 @@ export type BucketProgram = {
       ]
     },
     {
+      "name": "removeCollateral",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "bucket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "crateToken",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "mint",
+          "type": "publicKey"
+        }
+      ]
+    },
+    {
       "name": "setCollateralAllocations",
       "accounts": [
         {
@@ -443,8 +469,8 @@ export type BucketProgram = {
     },
     {
       "code": 6001,
-      "name": "AllocationBpsExceeded",
-      "msg": "Max allocation bps exceeded"
+      "name": "AllocationBpsError",
+      "msg": "Allocation bps error"
     },
     {
       "code": 6002,
@@ -458,23 +484,38 @@ export type BucketProgram = {
     },
     {
       "code": 6004,
+      "name": "CollateralDoesNotExistError",
+      "msg": "Cannot de-authorized a collateral mint that does not exist"
+    },
+    {
+      "code": 6005,
       "name": "CollateralSizeLimitsExceeded",
       "msg": "Collateral size limits exceeded"
     },
     {
-      "code": 6005,
+      "code": 6006,
+      "name": "MinCollateralError",
+      "msg": "Must maintain at least 1 approved collateral mint"
+    },
+    {
+      "code": 6007,
       "name": "NumericalUnderflowError",
       "msg": "Numerical Underflow Error"
     },
     {
-      "code": 6006,
+      "code": 6008,
       "name": "NumericalOverflowError",
       "msg": "Numerical Overflow Error"
     },
     {
-      "code": 6007,
+      "code": 6009,
       "name": "NumericalDivisionError",
       "msg": "Numerical Division Error"
+    },
+    {
+      "code": 6010,
+      "name": "NumberOfSizeNotSupported",
+      "msg": "Number is too large and is not supported"
     }
   ]
 };
@@ -608,6 +649,32 @@ export const IDL: BucketProgram = {
       ]
     },
     {
+      "name": "removeCollateral",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "bucket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "crateToken",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "mint",
+          "type": "publicKey"
+        }
+      ]
+    },
+    {
       "name": "setCollateralAllocations",
       "accounts": [
         {
@@ -924,8 +991,8 @@ export const IDL: BucketProgram = {
     },
     {
       "code": 6001,
-      "name": "AllocationBpsExceeded",
-      "msg": "Max allocation bps exceeded"
+      "name": "AllocationBpsError",
+      "msg": "Allocation bps error"
     },
     {
       "code": 6002,
@@ -939,23 +1006,38 @@ export const IDL: BucketProgram = {
     },
     {
       "code": 6004,
+      "name": "CollateralDoesNotExistError",
+      "msg": "Cannot de-authorized a collateral mint that does not exist"
+    },
+    {
+      "code": 6005,
       "name": "CollateralSizeLimitsExceeded",
       "msg": "Collateral size limits exceeded"
     },
     {
-      "code": 6005,
+      "code": 6006,
+      "name": "MinCollateralError",
+      "msg": "Must maintain at least 1 approved collateral mint"
+    },
+    {
+      "code": 6007,
       "name": "NumericalUnderflowError",
       "msg": "Numerical Underflow Error"
     },
     {
-      "code": 6006,
+      "code": 6008,
       "name": "NumericalOverflowError",
       "msg": "Numerical Overflow Error"
     },
     {
-      "code": 6007,
+      "code": 6009,
       "name": "NumericalDivisionError",
       "msg": "Numerical Division Error"
+    },
+    {
+      "code": 6010,
+      "name": "NumberOfSizeNotSupported",
+      "msg": "Number is too large and is not supported"
     }
   ]
 };

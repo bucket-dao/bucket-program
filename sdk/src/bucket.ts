@@ -295,7 +295,6 @@ export class BucketClient extends AccountUtils {
     const [crate, _crateBump] = await generateCrateAddress(reserve);
     const { addr: bucket } = await this.generateBucketAddress(crate);
 
-    console.log('rebalanceAuthority: ', rebalanceAuthority.toBase58());
     return this.bucketProgram.rpc.updateRebalanceAuthority(
       rebalanceAuthority, {
       accounts: {
@@ -305,7 +304,7 @@ export class BucketClient extends AccountUtils {
       },
       signers: signerInfo.signers,
     });
-    
+
   }
 
   authorizeCollateral = async (
@@ -315,12 +314,10 @@ export class BucketClient extends AccountUtils {
     payer: PublicKey | Keypair
   ) => {
     const signerInfo: SignerInfo = getSignersFromPayer(payer);
-    console.log("authority: ", signerInfo.payer.toBase58());
 
     const [crate, _crateBump] = await generateCrateAddress(reserve);
     const { addr: bucket } = await this.generateBucketAddress(crate);
 
-    console.log("authority: ", signerInfo.payer.toBase58());
     return this.bucketProgram.rpc.authorizeCollateral(collateral, allocation, {
       accounts: {
         bucket,
@@ -330,6 +327,46 @@ export class BucketClient extends AccountUtils {
       signers: signerInfo.signers,
     });
   };
+
+  removeCollateral = async (
+    reserve: PublicKey,
+    collateral: PublicKey,
+    depositor: PublicKey | Keypair,
+  ) => {
+    const signerInfo = getSignersFromPayer(depositor);
+
+    const [crate, _crateBump] = await generateCrateAddress(reserve);
+    const { addr: bucket } = await this.generateBucketAddress(crate);
+
+    return this.bucketProgram.rpc.removeCollateral(collateral, {
+      accounts: {
+        bucket,
+        crateToken: crate,
+        authority: signerInfo.payer,
+      },
+      signers: signerInfo.signers,
+    });
+  }
+
+  setCollateralAllocations = async (
+    reserve: PublicKey,
+    collateral: Collateral[],
+    depositor: PublicKey | Keypair,
+  ) => {
+    const signerInfo = getSignersFromPayer(depositor);
+
+    const [crate, _crateBump] = await generateCrateAddress(reserve);
+    const { addr: bucket } = await this.generateBucketAddress(crate);
+
+    return this.bucketProgram.rpc.setCollateralAllocations(collateral, {
+      accounts: {
+        bucket,
+        crateToken: crate,
+        authority: signerInfo.payer,
+      },
+      signers: signerInfo.signers,
+    });
+  }
 
   deposit = async (
     amount: u64,

@@ -123,12 +123,12 @@ unsafe impl Zeroable for Price {}
 unsafe impl Pod for Price {}
 
 /// Returns the native oracle price (6.dp)
-pub fn get_oracle_price(oracle: &AccountInfo, precision: u32) -> i128 {
+pub fn get_oracle_price(oracle: &AccountInfo, precision: u32) -> u64 {
     let oracle_price = instructions::pyth_client::Price::load(&oracle).unwrap();
-    (oracle_price.agg.price as u128)
-        .checked_mul(10u128.pow(precision))
+    (oracle_price.agg.price as u64)
+        .checked_mul(10u64.pow(precision))
         .unwrap()
-        .checked_div(10u128.pow((-oracle_price.expo).try_into().unwrap()))
+        .checked_div(10u64.pow((-oracle_price.expo).try_into().unwrap()))
         .unwrap()
         .try_into()
         .unwrap()
