@@ -57,8 +57,8 @@ anchor build
 sh scripts/cp_idl.sh
 
 # deploy!
-solana balance
+solana balance # enough lamports left for deployment?
 # only deploy bucket program binary. we do not want to deploy pyth.
-anchor deploy --provider.cluster $network ./target/deploy/bucket_program.so
+anchor deploy --provider.cluster $network --program-name ./target/deploy/bucket_program.so
 echo "DEPLOYED TO $network"
 solana balance

@@ -1,6 +1,6 @@
 {
     "name": "@bucket-program/sdk",
-    "version": "0.0.1",
+    "version": "0.0.4",
     "description": "sdk for bucket-program",
     "main": "./dist/cjs/index.js",
     "module": "./dist/esm/index.js",

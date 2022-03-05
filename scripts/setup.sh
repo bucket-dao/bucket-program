@@ -13,10 +13,6 @@ echo running program tests
 cd ..
 anchor test
 
-echo installing client packages
-cd app
-yarn install
-
 echo installing cli packages
 cd ../cli
 yarn install
