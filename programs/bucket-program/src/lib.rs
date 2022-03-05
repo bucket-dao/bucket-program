@@ -96,6 +96,28 @@ pub mod bucket_program {
         Ok(())
     }
 
+    /// this instruction will, at the discretion of the rebalance authority, attempt to rebalance the collaterals'
+    /// allocation by using saber stable swaps to move towaard the desired target aalloation. currently, each rebalance
+    /// instruction is limited to 1 swap at a time.
+    ///
+    /// all collateral & reserve tokens are actually in ATAs belonging to the underlying crate PDA — not the bucket.
+    /// so, there are a few extra operations before we can perform the actual tokens. steps are as follows:
+    ///
+    /// 1. withdraw toknes from a crate ATA into a bucket ATA,
+    /// 2. swap tokens from one bucket ATA to another,
+    /// 3. transfer tokens from a bucket ATA into a crate ATA.
+    ///
+    /// instruction privilege: only the rebalance authority can invoke this instruction
+    pub fn rebalance<'info>(
+        ctx: Context<'_, '_, '_, 'info, Rebalance<'info>>,
+        amount_in: u64,
+        minimum_amount_out: u64
+    ) -> ProgramResult {
+        instructions::rebalance::handle(ctx, amount_in, minimum_amount_out)?;
+
+        Ok(())
+    }
+
     /// this instruction will transfer a certain number of the signer's authorized collateral tokens
     /// to the bucket. in return, it will mint an equivalent number of reserve tokens to the signer
     /// based on the relative value of collateral tokens depossited.

@@ -1,15 +1,33 @@
 import * as anchor from "@project-serum/anchor";
-import { u64 } from "@solana/spl-token";
+import { TOKEN_PROGRAM_ID, u64 } from "@solana/spl-token";
 import { Keypair, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
+import {} from "@saberhq/stableswap-sdk";
 import { expect } from "chai";
+import {
+  deployNewSwap,
+  StableSwap,
+  SWAP_PROGRAM_ID,
+  IExchange,
+} from "@saberhq/stableswap-sdk";
+import { SPLToken, Token as SToken } from "@saberhq/token-utils";
+import { SignerWallet } from "@saberhq/solana-contrib";
 
-import { BucketClient, Collateral, executeTx, NodeWallet } from "../sdk";
-import { TokenBalance } from "./common/util";
-import { expectThrowsAsync } from "./common/util";
+import {
+  expectThrowsAsync,
+  TokenBalance,
+  assertKeysEqual,
+} from "./common/util";
 import { mockOracle } from "./common/testHelpers";
+import {
+  setupPoolInitialization,
+  FEES,
+  AMP_FACTOR,
+} from "./helpers/saber/pool";
+import { BucketClient, Collateral, executeTx, NodeWallet, computeSwapAmounts } from "../sdk";
 
 describe("bucket-program", () => {
   const _provider = anchor.Provider.env();
+
   const client = new BucketClient(
     _provider.connection,
     _provider.wallet as anchor.Wallet
@@ -36,6 +54,22 @@ describe("bucket-program", () => {
   let userA: Keypair;
   let userB: Keypair;
   let userC: Keypair;
+
+  // ================================
+  // saber related config
+  // ================================
+  let tokenPool: SPLToken;
+  let userPoolAccount: PublicKey;
+  let mintA: SPLToken;
+  let mintB: SPLToken;
+  let tokenAccountA: PublicKey;
+  let tokenAccountB: PublicKey;
+  let adminFeeAccountA: PublicKey;
+  let adminFeeAccountB: PublicKey;
+  let exchange: IExchange;
+  let stableSwap: StableSwap;
+  let stableSwapAccount: Keypair;
+  let stableSwapProgramId: PublicKey;
 
   before("Create funded user accounts", async () => {
     authority = await nodeWallet.createFundedWallet(1 * LAMPORTS_PER_SOL);
@@ -135,10 +169,122 @@ describe("bucket-program", () => {
     );
   });
 
+  // =============================================================================
+  // create a local saber pool with our custom token mints, use to swap locally.
+  // we can test a local swap with a test like this.
+  // =============================================================================
+  before("deploy & seed saber pool", async () => {
+    stableSwapAccount = Keypair.generate();
+
+    const { seedPoolAccounts } = await setupPoolInitialization(
+      collateralB.publicKey,
+      collateralC.publicKey,
+      authority
+    );
+
+    const provider = new SignerWallet(authority).createProvider(
+      client.provider.connection
+    );
+
+    const { swap: newSwap, initializeArgs } = await deployNewSwap({
+      provider: provider as any,
+      swapProgramID: SWAP_PROGRAM_ID,
+      adminAccount: authority.publicKey,
+      tokenAMint: collateralB.publicKey,
+      tokenBMint: collateralC.publicKey,
+      ampFactor: new u64(AMP_FACTOR),
+      fees: FEES,
+      initialLiquidityProvider: authority.publicKey,
+      useAssociatedAccountForInitialLP: true,
+      seedPoolAccounts,
+      swapAccountSigner: stableSwapAccount,
+    });
+
+    exchange = {
+      programID: stableSwapProgramId,
+      swapAccount: stableSwapAccount.publicKey,
+      lpToken: new SToken({
+        symbol: "LP",
+        name: "StableSwap LP",
+        address: initializeArgs.poolTokenMint.toString(),
+        decimals: 6,
+        chainId: 100,
+      }),
+      tokens: [
+        new SToken({
+          symbol: "TOKA",
+          name: "Token A",
+          address: initializeArgs.tokenA.mint.toString(),
+          decimals: 6,
+          chainId: 100,
+        }),
+        new SToken({
+          symbol: "TOKB",
+          name: "Token B",
+          address: initializeArgs.tokenB.mint.toString(),
+          decimals: 6,
+          chainId: 100,
+        }),
+      ],
+    };
+
+    stableSwap = newSwap;
+
+    tokenPool = new SPLToken(
+      client.provider.connection,
+      initializeArgs.poolTokenMint,
+      TOKEN_PROGRAM_ID,
+      authority
+    );
+
+    mintA = new SPLToken(
+      client.provider.connection,
+      initializeArgs.tokenA.mint,
+      TOKEN_PROGRAM_ID,
+      authority
+    );
+    mintB = new SPLToken(
+      client.provider.connection,
+      initializeArgs.tokenB.mint,
+      TOKEN_PROGRAM_ID,
+      authority
+    );
+    tokenAccountA = initializeArgs.tokenA.reserve;
+    tokenAccountB = initializeArgs.tokenB.reserve;
+    adminFeeAccountA = initializeArgs.tokenA.adminFeeAccount;
+    adminFeeAccountB = initializeArgs.tokenB.adminFeeAccount;
+    userPoolAccount = initializeArgs.destinationPoolTokenAccount;
+  });
+
+  it("load and verify swap pool integrity", async () => {
+    const fetchedStableSwap = await StableSwap.load(
+      client.provider.connection,
+      stableSwapAccount.publicKey,
+      stableSwapProgramId
+    );
+
+    assertKeysEqual(
+      fetchedStableSwap.config.swapAccount,
+      stableSwapAccount.publicKey
+    );
+    const { state } = fetchedStableSwap;
+    assertKeysEqual(state.tokenA.adminFeeAccount, adminFeeAccountA);
+    assertKeysEqual(state.tokenB.adminFeeAccount, adminFeeAccountB);
+    assertKeysEqual(state.tokenA.reserve, tokenAccountA);
+    assertKeysEqual(state.tokenB.reserve, tokenAccountB);
+    assertKeysEqual(state.tokenA.mint, mintA.publicKey);
+    assertKeysEqual(state.tokenB.mint, mintB.publicKey);
+    assertKeysEqual(state.poolTokenMint, tokenPool.publicKey);
+
+    expect(state.initialAmpFactor.toNumber()).to.equal(AMP_FACTOR);
+    expect(state.targetAmpFactor.toNumber()).to.equal(AMP_FACTOR);
+    // expect(state.fees).to.equal(FEES); // plain equal doesn't work here
+  });
+
   before("Fund users' accounts with some of each collateral", async () => {
     const fundingAmount = new u64(1_000_000);
 
-    for (const user of [userA, userB, userC]) {
+    for (const user of [authority, userA, userB, userC]) {
       for (const collateral of [
         collateralA,
         collateralB,
@@ -163,25 +309,6 @@ describe("bucket-program", () => {
         );
       }
     }
-  });
-
-  it("Update rebalance authority", async () => {
-    const { bucket: bucketBefore } = await client.fetchBucket(bucketKey);
-
-    const rebalanceAuthority = Keypair.generate().publicKey;
-    await client.updateRebalanceAuthority(
-      reserve.publicKey,
-      rebalanceAuthority,
-      authority
-    );
-
-    const { bucket: bucketAfter } = await client.fetchBucket(bucketKey);
-    expect(bucketBefore.rebalanceAuthority.toBase58()).to.not.equal(
-      bucketAfter.rebalanceAuthority.toBase58()
-    );
-    expect(bucketAfter.rebalanceAuthority.toBase58()).to.equal(
-      rebalanceAuthority.toBase58()
-    );
   });
 
   it("User attempts to deposit unauthorized collateral", async () => {
@@ -296,7 +423,6 @@ describe("bucket-program", () => {
     expect(collateralListC[2].allocation).to.equal(allocationC);
   });
 
-  // remove_collateral
   it("Remove collateral mint", async () => {
     // verify neither collateral D or E is authorized before executing instruction
     const { collateral: collateralListBefore } = await client.fetchBucket(
@@ -304,8 +430,8 @@ describe("bucket-program", () => {
     );
 
     expect(
-      collateralListBefore.filter(
-        (c) => [
+      collateralListBefore.filter((c) =>
+        [
           collateralD.publicKey.toBase58(),
           collateralE.publicKey.toBase58(),
         ].includes(c.mint.toBase58())
@@ -533,7 +659,7 @@ describe("bucket-program", () => {
       collateralA.publicKey,
       issueAuthority,
       userA,
-      oracle,
+      oracle
     );
 
     // fetch depositor & crate ATA balances after deposit
@@ -551,10 +677,10 @@ describe("bucket-program", () => {
       crateKey
     );
 
-    console.log("Deposit Amount: ", depositAmount)
-    console.log("Depositor Reserve After: ", depositorReserveAfter)
-    console.log("Depositor Collateral After: ", depositorCollateralAfter)
-    console.log("Crate Collateral After: ", crateCollateralAfter)
+    console.log("Deposit Amount: ", depositAmount);
+    console.log("Depositor Reserve After: ", depositorReserveAfter);
+    console.log("Depositor Collateral After: ", depositorCollateralAfter);
+    console.log("Crate Collateral After: ", crateCollateralAfter);
 
     expect(depositorReserveAfter).to.equal(depositAmount.toNumber());
     expect(depositorCollateralAfter).to.equal(
@@ -694,7 +820,7 @@ describe("bucket-program", () => {
       [collateralA.publicKey, collateralB.publicKey, collateralC.publicKey],
       withdrawAuthority,
       userA,
-      oracle,
+      oracle
     );
 
     // fetch withdrawer & crate ATA balances after redeem
@@ -717,10 +843,92 @@ describe("bucket-program", () => {
         userA.publicKey
       );
       console.log("what's in each user collateral", userCollateralAmount);
-      console.log("what's in each token balance", tokenBalances[collateralPublicKey.toBase58()].before + collateralShare);
+      console.log(
+        "what's in each token balance",
+        tokenBalances[collateralPublicKey.toBase58()].before + collateralShare
+      );
       expect(userCollateralAmount).to.equal(
         tokenBalances[collateralPublicKey.toBase58()].before + collateralShare
       );
     }
+  });
+
+  it("Rebalance underlying asset allocations", async () => {
+    const amountIn = 1_000;
+    // slippage is incredibly high in the local pool due to a lack of liquidity
+    // between this token pair. in real life, we want a much lower slippage.
+    const maxSlippageBps = 2_500;
+
+    const expectedSwapAmount = computeSwapAmounts(
+      amountIn,
+      maxSlippageBps
+    );
+
+    const crateTokenBBalanceBefore = await client.fetchTokenBalance(
+      collateralB.publicKey,
+      crateKey,
+    );
+
+    const crateTokenCBalanceBefore = await client.fetchTokenBalance(
+      collateralC.publicKey,
+      crateKey,
+    );
+
+    await client.rebalance(
+      {
+        amountIn,
+        maxSlippageBps,
+        tokenA: collateralB.publicKey,
+        tokenB: collateralC.publicKey,
+        swapAccount: stableSwapAccount.publicKey,
+      },
+      reserve.publicKey,
+      authority
+    );
+
+    const bucketTokenBBalanceAfter = await client.fetchTokenBalance(
+      collateralB.publicKey,
+      bucketKey,
+    );
+    expect(bucketTokenBBalanceAfter).to.equal(0);
+
+    const bucketTokenCBalanceAfter = await client.fetchTokenBalance(
+      collateralC.publicKey,
+      bucketKey,
+    );
+    expect(bucketTokenCBalanceAfter).to.equal(0);
+
+    const crateTokenBBalanceAfter = await client.fetchTokenBalance(
+      collateralB.publicKey,
+      crateKey,
+    );
+    expect(crateTokenBBalanceAfter)
+      .to.equal(crateTokenBBalanceBefore-expectedSwapAmount.amountIn.toNumber());
+
+    const crateTokenCBalanceAfter = await client.fetchTokenBalance(
+      collateralC.publicKey,
+      crateKey,
+    );
+    expect(crateTokenCBalanceAfter)
+      .to.equal(crateTokenCBalanceBefore+expectedSwapAmount.minAmountOut.toNumber());
+  });
+
+  it("Update rebalance authority", async () => {
+    const { bucket: bucketBefore } = await client.fetchBucket(bucketKey);
+
+    const rebalanceAuthority = Keypair.generate().publicKey;
+    await client.updateRebalanceAuthority(
+      reserve.publicKey,
+      rebalanceAuthority,
+      authority
+    );
+
+    const { bucket: bucketAfter } = await client.fetchBucket(bucketKey);
+    expect(bucketBefore.rebalanceAuthority.toBase58()).to.not.equal(
+      bucketAfter.rebalanceAuthority.toBase58()
+    );
+    expect(bucketAfter.rebalanceAuthority.toBase58()).to.equal(
+      rebalanceAuthority.toBase58()
+    );
   });
 });

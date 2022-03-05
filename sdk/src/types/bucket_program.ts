@@ -183,6 +183,91 @@ export type BucketProgram = {
       ]
     },
     {
+      "name": "rebalance",
+      "accounts": [
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "bucket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "crateToken",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "withdrawAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "swap",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "swapAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "userAuthority",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "inputAReserve",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "outputBReserve",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "outputBFees",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "poolMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "crateTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "saberProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "amountIn",
+          "type": "u64"
+        },
+        {
+          "name": "minimumAmountOut",
+          "type": "u64"
+        }
+      ]
+    },
+    {
       "name": "deposit",
       "accounts": [
         {
@@ -410,6 +495,47 @@ export type BucketProgram = {
       }
     },
     {
+      "name": "ErrorCode",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "WrongBurnError"
+          },
+          {
+            "name": "AllocationBpsError"
+          },
+          {
+            "name": "WrongCollateralError"
+          },
+          {
+            "name": "CollateralAlreadyAuthorizedError"
+          },
+          {
+            "name": "CollateralDoesNotExistError"
+          },
+          {
+            "name": "CollateralSizeLimitsExceeded"
+          },
+          {
+            "name": "MinCollateralError"
+          },
+          {
+            "name": "NumericalUnderflowError"
+          },
+          {
+            "name": "NumericalOverflowError"
+          },
+          {
+            "name": "NumericalDivisionError"
+          },
+          {
+            "name": "NumberOfSizeNotSupported"
+          }
+        ]
+      }
+    },
+    {
       "name": "PriceStatus",
       "type": {
         "kind": "enum",
@@ -459,63 +585,6 @@ export type BucketProgram = {
           }
         ]
       }
-    }
-  ],
-  "errors": [
-    {
-      "code": 6000,
-      "name": "WrongBurnError",
-      "msg": "Must burn reserve token"
-    },
-    {
-      "code": 6001,
-      "name": "AllocationBpsError",
-      "msg": "Allocation bps error"
-    },
-    {
-      "code": 6002,
-      "name": "WrongCollateralError",
-      "msg": "Must deposit an approved collateral mint"
-    },
-    {
-      "code": 6003,
-      "name": "CollateralAlreadyAuthorizedError",
-      "msg": "Cannot re-authorized a collateral mint authorized"
-    },
-    {
-      "code": 6004,
-      "name": "CollateralDoesNotExistError",
-      "msg": "Cannot de-authorized a collateral mint that does not exist"
-    },
-    {
-      "code": 6005,
-      "name": "CollateralSizeLimitsExceeded",
-      "msg": "Collateral size limits exceeded"
-    },
-    {
-      "code": 6006,
-      "name": "MinCollateralError",
-      "msg": "Must maintain at least 1 approved collateral mint"
-    },
-    {
-      "code": 6007,
-      "name": "NumericalUnderflowError",
-      "msg": "Numerical Underflow Error"
-    },
-    {
-      "code": 6008,
-      "name": "NumericalOverflowError",
-      "msg": "Numerical Overflow Error"
-    },
-    {
-      "code": 6009,
-      "name": "NumericalDivisionError",
-      "msg": "Numerical Division Error"
-    },
-    {
-      "code": 6010,
-      "name": "NumberOfSizeNotSupported",
-      "msg": "Number is too large and is not supported"
     }
   ]
 };
@@ -705,6 +774,91 @@ export const IDL: BucketProgram = {
       ]
     },
     {
+      "name": "rebalance",
+      "accounts": [
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "bucket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "crateToken",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "withdrawAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "swap",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "swapAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "userAuthority",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "inputAReserve",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "outputBReserve",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "outputBFees",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "poolMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "crateTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "saberProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "amountIn",
+          "type": "u64"
+        },
+        {
+          "name": "minimumAmountOut",
+          "type": "u64"
+        }
+      ]
+    },
+    {
       "name": "deposit",
       "accounts": [
         {
@@ -932,6 +1086,47 @@ export const IDL: BucketProgram = {
       }
     },
     {
+      "name": "ErrorCode",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "WrongBurnError"
+          },
+          {
+            "name": "AllocationBpsError"
+          },
+          {
+            "name": "WrongCollateralError"
+          },
+          {
+            "name": "CollateralAlreadyAuthorizedError"
+          },
+          {
+            "name": "CollateralDoesNotExistError"
+          },
+          {
+            "name": "CollateralSizeLimitsExceeded"
+          },
+          {
+            "name": "MinCollateralError"
+          },
+          {
+            "name": "NumericalUnderflowError"
+          },
+          {
+            "name": "NumericalOverflowError"
+          },
+          {
+            "name": "NumericalDivisionError"
+          },
+          {
+            "name": "NumberOfSizeNotSupported"
+          }
+        ]
+      }
+    },
+    {
       "name": "PriceStatus",
       "type": {
         "kind": "enum",
@@ -981,63 +1176,6 @@ export const IDL: BucketProgram = {
           }
         ]
       }
-    }
-  ],
-  "errors": [
-    {
-      "code": 6000,
-      "name": "WrongBurnError",
-      "msg": "Must burn reserve token"
-    },
-    {
-      "code": 6001,
-      "name": "AllocationBpsError",
-      "msg": "Allocation bps error"
-    },
-    {
-      "code": 6002,
-      "name": "WrongCollateralError",
-      "msg": "Must deposit an approved collateral mint"
-    },
-    {
-      "code": 6003,
-      "name": "CollateralAlreadyAuthorizedError",
-      "msg": "Cannot re-authorized a collateral mint authorized"
-    },
-    {
-      "code": 6004,
-      "name": "CollateralDoesNotExistError",
-      "msg": "Cannot de-authorized a collateral mint that does not exist"
-    },
-    {
-      "code": 6005,
-      "name": "CollateralSizeLimitsExceeded",
-      "msg": "Collateral size limits exceeded"
-    },
-    {
-      "code": 6006,
-      "name": "MinCollateralError",
-      "msg": "Must maintain at least 1 approved collateral mint"
-    },
-    {
-      "code": 6007,
-      "name": "NumericalUnderflowError",
-      "msg": "Numerical Underflow Error"
-    },
-    {
-      "code": 6008,
-      "name": "NumericalOverflowError",
-      "msg": "Numerical Overflow Error"
-    },
-    {
-      "code": 6009,
-      "name": "NumericalDivisionError",
-      "msg": "Numerical Division Error"
-    },
-    {
-      "code": 6010,
-      "name": "NumberOfSizeNotSupported",
-      "msg": "Number is too large and is not supported"
     }
   ]
 };

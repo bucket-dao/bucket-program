@@ -32,11 +32,10 @@ pub fn handle(ctx: Context<Deposit>, deposit_amount: u64) -> ProgramResult {
         .checked_div(10_u64.pow(precision))
         .unwrap();
 
-    issue(
-        ctx.accounts
+    issue(ctx.accounts
             .into_issue_reserve_context()
             .with_signer(&[&[b"issue", &[ctx.accounts.issue_authority.bump]]]),
-issue_amount.try_into().unwrap(),
+        issue_amount.try_into().unwrap(),
     )?;
 
     Ok(())

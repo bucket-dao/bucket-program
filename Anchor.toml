@@ -14,3 +14,7 @@ test = "ts-mocha -p ./tsconfig.json -t 1000000 tests/*.ts"
 [[test.genesis]]
 address = "CRATwLpu6YZEeiVq9ajjxs61wPQ9f29s1UoQR9siJCRs"
 program = "./tests/programs/crate_token.so"
+
+[[test.genesis]]
+address = "SSwpkEEcbUqx4vtoEByFjSkhKdCT862DNVb52nZg1UZ"
+program = "./tests/programs/stable_swap.so"
