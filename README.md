@@ -22,19 +22,19 @@ We started this project at [mtnDAO](https://twitter.com/mtnDAO) for [Solana's Ri
 ## Respository overview
 
 * `cli/`
-  * interact with the deployed bucket program via the CLI instead of the UI. There is 1-1 mapping between on-chain instructions and CLI commands. There rae also some extra utility functions to help surface data currently stored on-chain, e.g. view bucket PDA attributes, see a users parsed ATAs, etc.
+  * Interact with the deployed bucket program via the CLI instead of the UI. There is 1-1 mapping between on-chain instructions and CLI commands. There are also some extra utility functions to help surface data currently stored on-chain, e.g. view bucket PDA attributes, see a user's parsed ATAs, etc.
 
 * `programs/`
-  * folder containing all on-chain programs. We only deploy the bucket-program program. They pyth program is purely for localnet testing since pyth's oracle price feeds are not available locaally.
+  * Folder containing all on-chain programs. We only deploy the bucket-program program. The pyth program is purely for localnet testing since pyth's oracle price feeds are not available locally.
 
 * `scripts/`
-  * various bash scripts to make common actions easier such as setting up a dev environment, copying IDLs, deploying a program, etc.
+  * Various bash scripts to make common actions easier such as setting up a dev environment, copying IDLs, deploying a program, etc.
 
 * `sdk/`
-  * The package that allows you to easily interact with a deployed bucket program. There is a 1-1 mapping between SDK functions and on-chain instructions. The SDK is beneficial because it abstacts away a lot of complexity of finding addresses, building transactions, and more.
+  * The package that allows you to easily interact with a deployed bucket program. There is a 1-1 mapping between SDK functions and on-chain instructions. The SDK is beneficial because it abstracts away a lot of complexity of finding addresses, building transactions, and more.
 
 * `tests/`
-  * the directory containing code and helperss to test the end-to-end functionality of the bucket program. These tests are a great way to understand how the bucket program works + how to interact with the program.
+  * The directory containing code and helpers to test the end-to-end functionality of the bucket program. These tests are a great way to understand how the bucket program works + how to interact with the program.
 
 ## Rust Crates
 
@@ -44,11 +44,11 @@ These rust crates are produced by running anchor build.
 
 | Package              | Description                                                                          | Version                                                                                                         | Docs                                                                                           |
 | :------------------- | :----------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------- |
-| `bucket-programa`        | Core bucket protocol                                                            | [![crates](https://img.shields.io/crates/v/stable-swap)](https://crates.io/crates/bucket-program)                  | [![Docs.rs](https://docs.rs/bucket-program/badge.svg)](https://docs.rs/bucket-program)               |
+| `bucket-program`        | Core bucket protocol                                                            | [![crates](https://img.shields.io/crates/v/stable-swap)](https://crates.io/crates/bucket-program)                  | [![Docs.rs](https://docs.rs/bucket-program/badge.svg)](https://docs.rs/bucket-program)               |
 
 #### Dependencies
 
-These rust crates are imported across this repo's programs' cargo.toml
+These rust crates are imported across this repo's programs' Cargo.toml files. Disclaimer: our programs do not necessarily the latest versions, as displayed in the table below. Check the Cargo.toml or Cargo.lock for specific crate versions.
 
 | Package              | Description                                                                          | Version                                                                                                         | Docs                                                                                           |
 | :------------------- | :----------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------- |
@@ -81,7 +81,7 @@ You'll need to install a couple development tools if this is your first time dev
 #### Other
 
 By this point, you should have
-* [yarn](https://classic.yarnpkg.com/lang/en/docs/install/#mac-stable), and
+* [yarn](https://classic.yarnpkg.com/lang/en/docs/install), and
 * [npm](https://docs.npmjs.com/cli/v7/configuring-npm/install)
 
 If not, it doesn't hurt to install these now. Many projects ues these tools. You will also need `ts-mocha` installed globally to run our tests. You can install it via NPM like so:
@@ -108,7 +108,7 @@ The respective projects' documentation sites and discords are a great place to s
 
 ### Tests
 
-Make sure you previously built the SDK and installed all relevant packagess. Then, you can run all the tests with:
+Make sure you previously built the SDK and installed all relevant packages. Then, you can run all the tests with:
 
 ```sh
 anchor test
