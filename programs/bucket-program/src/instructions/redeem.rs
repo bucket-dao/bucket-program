@@ -3,6 +3,7 @@ use {
         context::{Redeem, RedeemAsset},
         error::ErrorCode,
         instructions::pyth_client::*,
+        math_error
     },
     anchor_lang::{prelude::*, solana_program::account_info::next_account_infos},
     anchor_spl::token::burn,
@@ -54,9 +55,9 @@ pub fn handle<'info>(
         let collateral_amount = asset.crate_collateral.amount;
         let collateral_sum = (collateral_amount as u64)
             .checked_mul(collateral_price)
-            .ok_or(ErrorCode::NumericalOverflowError)?
+            .ok_or_else(math_error!())?
             .checked_div(10_u64.pow(collateral_mint_decimals as u32))
-            .ok_or(ErrorCode::NumericalUnderflowError)?;
+            .ok_or_else(math_error!())?;
         total_collateral_sum = total_collateral_sum.checked_add(collateral_sum).unwrap();
     }
 
@@ -76,9 +77,9 @@ pub fn handle<'info>(
             10_u64.pow(precision + precision_buffer),
             price_per_bucket,
         ))
-        .ok_or(ErrorCode::NumericalOverflowError)?
+        .ok_or_else(math_error!())?
         .checked_div(10_u64.pow(precision + precision_buffer))
-        .ok_or(ErrorCode::NumericalUnderflowError)?;
+        .ok_or_else(math_error!())?;
     let remaining_accounts_iter = &mut ctx.remaining_accounts.iter();
 
     let withdraw_authority_signer_seeds: &[&[&[u8]]] =
