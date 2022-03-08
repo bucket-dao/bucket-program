@@ -498,7 +498,7 @@ export class BucketClient extends AccountUtils {
     const [crate, _crateBump] = await generateCrateAddress(reserve);
     const { addr: bucket } = await this.generateBucketAddress(crate);
 
-    const depsitorCollateralATA = await this.getOrCreateATA(
+    const depositorCollateralATA = await this.getOrCreateATA(
       collateral,
       signerInfo.payer,
       signerInfo.payer,
@@ -533,12 +533,12 @@ export class BucketClient extends AccountUtils {
         crateCollateral: crateCollateralATA.address,
         collateralMint: collateral,
         depositor: signerInfo.payer,
-        depositorCollateral: depsitorCollateralATA.address,
+        depositorCollateral: depositorCollateralATA.address,
         depositorReserve: depositorReserveATA.address,
         oracle: oracle,
       },
       preInstructions: flattenValidInstructions([
-        depsitorCollateralATA,
+        depositorCollateralATA,
         depositorReserveATA,
         crateCollateralATA,
       ]),

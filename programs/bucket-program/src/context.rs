@@ -15,6 +15,11 @@ use {
 
 /// ============================================================
 /// RESTRICTED INSTRUCTIONS
+/// 
+/// these are instructions that can only be called by some
+/// pre-defined entity. most can are restricted to the bucket's
+/// authority. however, there will be some exceptions, e.g.
+/// rebalance can only be called by the rebalance_authority.
 /// ============================================================
 
 /// if singleton (issue|withdraw) authority PDAs become problemtic,
@@ -190,6 +195,12 @@ pub struct Rebalance<'info> {
 
 /// ============================================================
 /// UNRESTRICTED INSTRUCTIONS
+/// 
+/// these are instructions that can only be called by anyone,
+/// unlike the restricted instructions above. the calling entity
+/// must sign and will also pay for any related fees. thus, these
+/// instructions presuppose some sort of value, otherwise users
+/// would not be encouraged to pay fees.
 /// ============================================================
 
 #[derive(Accounts)]

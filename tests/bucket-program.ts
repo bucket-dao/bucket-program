@@ -1,7 +1,6 @@
 import * as anchor from "@project-serum/anchor";
 import { TOKEN_PROGRAM_ID, u64 } from "@solana/spl-token";
 import { Keypair, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
-import {} from "@saberhq/stableswap-sdk";
 import { expect } from "chai";
 import {
   deployNewSwap,

@@ -97,13 +97,13 @@ pub mod bucket_program {
     }
 
     /// this instruction will, at the discretion of the rebalance authority, attempt to rebalance the collaterals'
-    /// allocation by using saber stable swaps to move towaard the desired target aalloation. currently, each rebalance
+    /// allocation by using saber stable swaps to move toward the desired target allocation. currently, each rebalance
     /// instruction is limited to 1 swap at a time.
     ///
     /// all collateral & reserve tokens are actually in ATAs belonging to the underlying crate PDA — not the bucket.
-    /// so, there are a few extra operations before we can perform the actual tokens. steps are as follows:
+    /// so, there are a few extra operations before we can perform the actual token swap. steps are as follows:
     ///
-    /// 1. withdraw toknes from a crate ATA into a bucket ATA,
+    /// 1. withdraw tokens from a crate ATA into a bucket ATA,
     /// 2. swap tokens from one bucket ATA to another,
     /// 3. transfer tokens from a bucket ATA into a crate ATA.
     ///
