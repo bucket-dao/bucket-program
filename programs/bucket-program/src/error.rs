@@ -16,12 +16,19 @@ pub enum ErrorCode {
     CollateralSizeLimitsExceeded,
     #[msg("Must maintain at least 1 approved collateral mint")]
     MinCollateralError,
-    #[msg("Numerical Underflow Error")]
-    NumericalUnderflowError,
-    #[msg("Numerical Overflow Error")]
-    NumericalOverflowError,
-    #[msg("Numerical Division Error")]
-    NumericalDivisionError,
+    #[msg("Math Error")]
+    MathError,
     #[msg("Number is too large and is not supported")]
     NumberOfSizeNotSupported,
+}
+
+#[macro_export]
+macro_rules! math_error {
+    () => {{
+        || {
+            let error_code = ErrorCode::MathError;
+            msg!("Error {} thrown at {}:{}", error_code, file!(), line!());
+            error_code
+        }
+    }};
 }

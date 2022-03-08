@@ -521,13 +521,7 @@ export type BucketProgram = {
             "name": "MinCollateralError"
           },
           {
-            "name": "NumericalUnderflowError"
-          },
-          {
-            "name": "NumericalOverflowError"
-          },
-          {
-            "name": "NumericalDivisionError"
+            "name": "MathError"
           },
           {
             "name": "NumberOfSizeNotSupported"
@@ -1112,13 +1106,7 @@ export const IDL: BucketProgram = {
             "name": "MinCollateralError"
           },
           {
-            "name": "NumericalUnderflowError"
-          },
-          {
-            "name": "NumericalOverflowError"
-          },
-          {
-            "name": "NumericalDivisionError"
+            "name": "MathError"
           },
           {
             "name": "NumberOfSizeNotSupported"

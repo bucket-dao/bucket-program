@@ -3,6 +3,7 @@ use {
         constant::{MAX_BASIS_POINTS, MAX_COLLATERAL_ELEMENTS},
         error::ErrorCode,
         util::{get_collateral_idx, get_divisor, is_collateral_authorized, sum_allocations},
+        math_error
     },
     anchor_lang::prelude::*,
     std::convert::TryInto,
@@ -70,7 +71,7 @@ impl Bucket {
             // update the running sum of updated allocation
             running_updated_allocation = running_updated_allocation
                 .checked_add(updated_collateral_allocation)
-                .ok_or(ErrorCode::NumericalOverflowError)?;
+                .ok_or_else(math_error!())?;
 
             // set the current collateral's updated allocation
             collateral.allocation = updated_collateral_allocation;
@@ -132,18 +133,18 @@ impl Bucket {
             // of these remainders. discussed further in comments below.
             let change_current_in_allocation = current_allocation
                 .checked_mul(removed_allocation)
-                .ok_or(ErrorCode::NumericalOverflowError)?
+                .ok_or_else(math_error!())?
                 .checked_div(
                     (MAX_BASIS_POINTS as u64)
                         .checked_sub(removed_allocation)
-                        .ok_or(ErrorCode::NumericalUnderflowError)?,
-                )
-                .ok_or(ErrorCode::NumericalDivisionError)?;
+                        .ok_or_else(math_error!())?
+                    )
+                .ok_or_else(math_error!())?;
 
             // update the current collateral's allocation
             collateral.allocation = current_allocation
                 .checked_add(change_current_in_allocation)
-                .ok_or(ErrorCode::NumericalOverflowError)?
+                .ok_or_else(math_error!())?
                 .try_into()
                 .unwrap();
 
@@ -158,14 +159,14 @@ impl Bucket {
             // update the running sum of collateral allocations
             running_allocation_sum = running_allocation_sum
                 .checked_add(collateral.allocation.try_into().unwrap())
-                .ok_or(ErrorCode::NumericalOverflowError)?;
+                .ok_or_else(math_error!())?;
         }
 
         // check if there is a discrepancy between expected max basis points and the updated allocation's sum.
         // if so, we want to resolve by adding the discrepancy to some collateral's allocation.
         let bps_discrepancy: u64 = (MAX_BASIS_POINTS as u64)
             .checked_sub(running_allocation_sum)
-            .ok_or(ErrorCode::NumericalUnderflowError)?;
+            .ok_or_else(math_error!())?;
 
         if bps_discrepancy > 0 {
             msg!("adjusting allocation amounts so that sum equals max bps");
@@ -175,7 +176,7 @@ impl Bucket {
             collateral.allocation = collateral
                 .allocation
                 .checked_add(bps_discrepancy.try_into().unwrap())
-                .ok_or(ErrorCode::NumericalOverflowError)?;
+                .ok_or_else(math_error!())?;
         }
 
         invariant!(
@@ -218,23 +219,23 @@ impl Bucket {
         // new collateral's allocation.
         let allocation_with_new_mint: u16 = current_collateral_allocation
             .checked_add(allocation)
-            .ok_or(ErrorCode::NumericalOverflowError)?;
+            .ok_or_else(math_error!())?;
         if allocation_with_new_mint > MAX_BASIS_POINTS {
             for mut collateral in self.collateral.iter_mut() {
                 let current_allocation_64: u64 = collateral.allocation as u64;
 
                 let current_and_new_allocation = current_allocation_64
                     .checked_mul(allocation as u64)
-                    .ok_or(ErrorCode::NumericalOverflowError)?;
+                    .ok_or_else(math_error!())?;
 
                 running_remainder = running_remainder
                     .checked_add(
                         // capture decimals lost when dividing by MAX_BASIS_POINTS
                         current_and_new_allocation
                             .checked_rem(MAX_BASIS_POINTS as u64)
-                            .ok_or(ErrorCode::NumericalDivisionError)?,
+                            .ok_or_else(math_error!())?
                     )
-                    .ok_or(ErrorCode::NumericalOverflowError)?;
+                    .ok_or_else(math_error!())?;
 
                 // calculate and set the proportional reduction of current collateral allocation based
                 // on new allocation amount.
@@ -242,9 +243,9 @@ impl Bucket {
                     .checked_sub(
                         current_and_new_allocation
                             .checked_div(MAX_BASIS_POINTS as u64)
-                            .ok_or(ErrorCode::NumericalDivisionError)?,
+                            .ok_or_else(math_error!())?,
                     )
-                    .ok_or(ErrorCode::NumericalUnderflowError)?
+                    .ok_or_else(math_error!())?
                     .try_into()
                     .unwrap();
 
@@ -261,11 +262,11 @@ impl Bucket {
             .checked_sub(
                 running_remainder
                     .checked_div(get_divisor(running_remainder)?)
-                    .ok_or(ErrorCode::NumericalDivisionError)?
+                    .ok_or_else(math_error!())?
                     .try_into()
                     .unwrap(),
             )
-            .ok_or(ErrorCode::NumericalOverflowError)?;
+            .ok_or_else(math_error!())?;
 
         self.collateral.push(Collateral {
             mint,

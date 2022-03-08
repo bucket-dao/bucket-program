@@ -217,15 +217,27 @@ pub struct Deposit<'info> {
     )]
     pub issue_authority: Box<Account<'info, IssueAuthority>>,
 
-    #[account(mut)]
+    #[account(
+        mut,
+        constraint = crate_collateral.mint == collateral_mint.key(),
+        constraint = crate_collateral.owner == common.crate_token.key()
+    )]
     pub crate_collateral: Box<Account<'info, TokenAccount>>,
 
     pub collateral_mint: Account<'info, Mint>,
 
-    #[account(mut)]
+    #[account(
+        mut,
+        constraint = depositor_collateral.mint == collateral_mint.key(),
+        constraint = depositor_collateral.owner == depositor.key()
+    )]
     pub depositor_collateral: Box<Account<'info, TokenAccount>>,
 
-    #[account(mut)]
+    #[account(
+        mut,
+        constraint = depositor_collateral.owner == depositor.key(),
+        constraint = depositor_reserve.mint == common.crate_mint.key(),
+    )]
     pub depositor_reserve: Box<Account<'info, TokenAccount>>,
 
     /// CHECK: required for CPI into pyth
@@ -246,7 +258,11 @@ pub struct Redeem<'info> {
     )]
     pub withdraw_authority: Box<Account<'info, WithdrawAuthority>>,
 
-    #[account(mut)]
+    #[account(
+        mut,
+        constraint = withdrawer_reserve.owner == withdrawer.key(),
+        constraint = withdrawer_reserve.mint == common.crate_mint.key(),
+    )]
     pub withdrawer_reserve: Box<Account<'info, TokenAccount>>,
 
     /// CHECK: required for CPI into pyth
@@ -267,7 +283,11 @@ pub struct Common<'info> {
     /// CHECK: unsafe account type, required for CPI invocation.
     pub crate_token: UncheckedAccount<'info>,
 
-    #[account(mut)]
+    #[account(
+        mut,
+        constraint = crate_mint.freeze_authority.unwrap() == crate_token.key(),
+        constraint = crate_mint.mint_authority.unwrap() == crate_token.key(),
+    )]
     pub crate_mint: Account<'info, Mint>,
 
     pub crate_token_program: Program<'info, crate_token::program::CrateToken>,
