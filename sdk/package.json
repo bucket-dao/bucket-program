@@ -22,10 +22,12 @@
     "license": "MIT",
     "dependencies": {
         "@project-serum/anchor": "0.21.0",
+        "@saberhq/stableswap-sdk": "^1.12.48",
         "@solana/spl-token": "^0.1.8",
         "@solana/wallet-adapter-base": "^0.8.1",
         "@solana/web3.js": "^1.31.0",
         "copyfiles": "^2.4.1",
+        "fetch": "^1.1.0",
         "rimraf": "^3.0.2"
     },
     "devDependencies": {

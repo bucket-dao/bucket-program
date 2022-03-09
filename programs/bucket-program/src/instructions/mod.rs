@@ -7,5 +7,6 @@ pub mod remove_collateral;
 // admin instructions
 pub mod set_collateral_allocations;
 pub mod update_rebalance_authority;
+pub mod rebalance;
 // pyth client created for local integ testing
 pub mod pyth_client;

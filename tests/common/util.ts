@@ -22,3 +22,7 @@ export const expectThrowsAsync = async (
     expect((error as any).message).to.equal(errorMessage);
   }
 };
+
+export const assertKeysEqual = (a: PublicKey, b: PublicKey) => {
+  expect(a.toBase58()).to.equal(b.toBase58());
+};

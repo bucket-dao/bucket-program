@@ -42,3 +42,7 @@ target
 
 # deploy output
 **/*.original
+
+# misc files to ignore
+.vscode/
+**/*.txt
