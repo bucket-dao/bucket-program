@@ -14,6 +14,8 @@ pub enum ErrorCode {
     CollateralDoesNotExistError,
     #[msg("Collateral size limits exceeded")]
     CollateralSizeLimitsExceeded,
+    #[msg("Caller is not authorized to rebalance specified mints")]
+    CallerCannotRebalanceCollateral,
     #[msg("Must maintain at least 1 approved collateral mint")]
     MinCollateralError,
     #[msg("Math Error")]
@@ -21,6 +23,7 @@ pub enum ErrorCode {
     #[msg("Number is too large and is not supported")]
     NumberOfSizeNotSupported,
 }
+
 
 #[macro_export]
 macro_rules! math_error {

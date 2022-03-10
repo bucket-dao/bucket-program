@@ -15,7 +15,7 @@ use {
 
 /// ============================================================
 /// RESTRICTED INSTRUCTIONS
-/// 
+///
 /// these are instructions that can only be called by some
 /// pre-defined entity. most can are restricted to the bucket's
 /// authority. however, there will be some exceptions, e.g.
@@ -123,10 +123,9 @@ pub struct AuthorizedUpdate<'info> {
 
 #[derive(Accounts)]
 pub struct Rebalance<'info> {
-    #[account(
-        mut,
-        constraint = payer.key() == bucket.rebalance_authority.key()
-    )]
+    // functionality is slightly more flexible if the payer is the rebalance authority. we decide in the
+    // instruction.
+    #[account(mut)]
     pub payer: Signer<'info>,
 
     #[account(
@@ -166,11 +165,11 @@ pub struct Rebalance<'info> {
 
     /// The token account for the pool's reserves of this token.
     #[account(mut)]
-    pub input_a_reserve: Account<'info, TokenAccount>,
+    pub input_a_reserve: Box<Account<'info, TokenAccount>>,
 
     /// The token account for the pool's reserves of this token.
     #[account(mut)]
-    pub output_b_reserve: Account<'info, TokenAccount>,
+    pub output_b_reserve: Box<Account<'info, TokenAccount>>,
 
     /// The token account for the fees associated with the token.
     /// CHECK: verified via CPI call for saber swap.
@@ -195,7 +194,7 @@ pub struct Rebalance<'info> {
 
 /// ============================================================
 /// UNRESTRICTED INSTRUCTIONS
-/// 
+///
 /// these are instructions that can only be called by anyone,
 /// unlike the restricted instructions above. the calling entity
 /// must sign and will also pay for any related fees. thus, these
@@ -324,16 +323,32 @@ pub struct RedeemAsset<'info> {
 
 #[derive(Accounts)]
 pub struct RebalanceAsset<'info> {
-    #[account(mut)]
+    pub token_a: Account<'info, Mint>,
+
+    pub token_b: Account<'info, Mint>,
+
+    #[account(
+        mut,
+        constraint = crate_source_ata.mint == token_a.key()
+    )]
     pub crate_source_ata: Box<Account<'info, TokenAccount>>,
 
-    #[account(mut)]
+    #[account(
+        mut,
+        constraint = bucket_source_ata.mint == token_a.key(),
+    )]
     pub bucket_source_ata: Box<Account<'info, TokenAccount>>,
 
-    #[account(mut)]
+    #[account(
+        mut,
+        constraint = crate_dest_ata.mint == token_b.key(),
+    )]
     pub crate_dest_ata: Box<Account<'info, TokenAccount>>,
 
-    #[account(mut)]
+    #[account(
+        mut,
+        constraint = bucket_dest_ata.mint == token_b.key(),
+    )]
     pub bucket_dest_ata: Box<Account<'info, TokenAccount>>,
 }
 
@@ -499,7 +514,7 @@ impl<'info> Rebalance<'info> {
             output: SwapOutput {
                 // The token accounts of the user and the token.
                 user_token: SwapToken {
-                    /// The token account associated with the swap requester's source ATA
+                    /// The token account associated with the swap requester's destination ATA
                     user: asset.bucket_dest_ata.to_account_info(),
                     /// The token account for the pool’s reserves of this token.
                     reserve: self.output_b_reserve.to_account_info(),
