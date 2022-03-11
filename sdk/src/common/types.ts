@@ -6,6 +6,26 @@ export interface SwapAmount {
   minAmountOut: u64
 }
 
+export interface Collateral {
+  mint: PublicKey;
+  allocation: number;
+}
+
+export interface Allocation {
+  mint: PublicKey,
+  supply: number
+}
+
+export interface CollateralAllocationResult {
+  allocations: Allocation[],
+  supply: number
+}
+
+export interface SwapAmount {
+  amountIn: u64,
+  minAmountOut: u64
+}
+
 export interface SignerInfo {
   payer: PublicKey;
   signers: Keypair[];
