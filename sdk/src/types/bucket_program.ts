@@ -183,6 +183,91 @@ export type BucketProgram = {
       ]
     },
     {
+      "name": "rebalance",
+      "accounts": [
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "bucket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "crateToken",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "withdrawAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "swap",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "swapAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "userAuthority",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "inputAReserve",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "outputBReserve",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "outputBFees",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "poolMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "crateTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "saberProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "amountIn",
+          "type": "u64"
+        },
+        {
+          "name": "minimumAmountOut",
+          "type": "u64"
+        }
+      ]
+    },
+    {
       "name": "deposit",
       "accounts": [
         {
@@ -436,13 +521,7 @@ export type BucketProgram = {
             "name": "MinCollateralError"
           },
           {
-            "name": "NumericalUnderflowError"
-          },
-          {
-            "name": "NumericalOverflowError"
-          },
-          {
-            "name": "NumericalDivisionError"
+            "name": "MathError"
           },
           {
             "name": "NumberOfSizeNotSupported"
@@ -689,6 +768,91 @@ export const IDL: BucketProgram = {
       ]
     },
     {
+      "name": "rebalance",
+      "accounts": [
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "bucket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "crateToken",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "withdrawAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "swap",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "swapAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "userAuthority",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "inputAReserve",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "outputBReserve",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "outputBFees",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "poolMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "crateTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "saberProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "amountIn",
+          "type": "u64"
+        },
+        {
+          "name": "minimumAmountOut",
+          "type": "u64"
+        }
+      ]
+    },
+    {
       "name": "deposit",
       "accounts": [
         {
@@ -942,13 +1106,7 @@ export const IDL: BucketProgram = {
             "name": "MinCollateralError"
           },
           {
-            "name": "NumericalUnderflowError"
-          },
-          {
-            "name": "NumericalOverflowError"
-          },
-          {
-            "name": "NumericalDivisionError"
+            "name": "MathError"
           },
           {
             "name": "NumberOfSizeNotSupported"

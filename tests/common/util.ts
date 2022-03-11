@@ -33,6 +33,6 @@ export const isApproximatelyEqual = async (
   actual: number,
   threshold: number = 1 // %
 ) => {
-  const percentDiff = ((expected - actual) / ((expected + actual) / 2)) * 100;
-  expect(percentDiff <= threshold).to.be.true;
+  const signedPercentDiff = ((expected - actual) / ((expected + actual) / 2)) * 100;
+  expect(Math.abs(signedPercentDiff) <= threshold).to.be.true;
 };

@@ -7,7 +7,7 @@ import {
   sendAndConfirmTransaction,
 } from "@solana/web3.js";
 
-import { SignerInfo } from "./types";
+import { SignerInfo, ATAResult } from "./types";
 
 export function isKp(kp: PublicKey | Keypair) {
   return kp instanceof Keypair || "_keypair" in kp;
@@ -45,4 +45,16 @@ export const executeTx = async (
   ixns.forEach((ixn) => tx.add(ixn));
 
   return await sendAndConfirmTransaction(connection, tx, signers);
+};
+
+export const flattenValidInstructions = (
+  ataResults: ATAResult[]
+): TransactionInstruction[] => {
+  const flattenedInstructions: TransactionInstruction[] = [];
+
+  ataResults.forEach((res) => {
+    flattenedInstructions.push(...(res.instruction ? [res.instruction] : []));
+  });
+
+  return flattenedInstructions;
 };

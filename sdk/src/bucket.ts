@@ -1,7 +1,3 @@
-import {
-  CRATE_ADDRESSES,
-  generateCrateAddress,
-} from "@crateprotocol/crate-sdk";
 import * as anchor from "@project-serum/anchor";
 import { Program, Provider, Idl, Wallet } from "@project-serum/anchor";
 import { u64 } from "@solana/spl-token";
@@ -13,8 +9,17 @@ import {
   TransactionInstruction,
   SystemProgram,
   PublicKey,
+  Cluster,
 } from "@solana/web3.js";
 import invariant from "tiny-invariant";
+import {
+  CRATE_ADDRESSES,
+  generateCrateAddress,
+} from "@crateprotocol/crate-sdk";
+import {
+  StableSwap,
+  SWAP_PROGRAM_ID,
+} from "@saberhq/stableswap-sdk";
 
 import { AccountUtils } from "./common/account-utils";
 import {
@@ -22,15 +27,21 @@ import {
   SignerInfo,
   PdaDerivationResult,
   Collateral,
-  CollateralAllocationResult
+  CollateralAllocationResult,
+  RebalanceConfig,
 } from "./common/types";
-import { addIxn, getSignersFromPayer } from "./common/util";
+import { addIxn, getSignersFromPayer, flattenValidInstructions } from "./common/util";
 import { BucketProgram } from "./types/bucket_program";
+import { SaberProvider, computeSwapAmounts } from "./providers/saber";
+import { DEVNET } from "./common/constant";
 
 export class BucketClient extends AccountUtils {
   wallet: Wallet;
   provider!: Provider;
   bucketProgram!: Program<BucketProgram>;
+
+  // providers
+  saberProvider!: SaberProvider;
 
   constructor(
     conn: Connection,
@@ -42,6 +53,8 @@ export class BucketClient extends AccountUtils {
     this.wallet = wallet;
     this.setProvider();
     this.setBucketProgram(idl, programId);
+
+    this.saberProvider = new SaberProvider();
   }
 
   setProvider = () => {
@@ -311,8 +324,7 @@ export class BucketClient extends AccountUtils {
     const [crate, _crateBump] = await generateCrateAddress(reserve);
     const { addr: bucket } = await this.generateBucketAddress(crate);
 
-    return this.bucketProgram.rpc.updateRebalanceAuthority(
-      rebalanceAuthority, {
+    return this.bucketProgram.rpc.updateRebalanceAuthority(rebalanceAuthority, {
       accounts: {
         bucket,
         crateToken: crate,
@@ -320,7 +332,6 @@ export class BucketClient extends AccountUtils {
       },
       signers: signerInfo.signers,
     });
-
   }
 
   authorizeCollateral = async (
@@ -347,7 +358,7 @@ export class BucketClient extends AccountUtils {
   removeCollateral = async (
     reserve: PublicKey,
     collateral: PublicKey,
-    depositor: PublicKey | Keypair,
+    depositor: PublicKey | Keypair
   ) => {
     const signerInfo = getSignersFromPayer(depositor);
 
@@ -362,12 +373,12 @@ export class BucketClient extends AccountUtils {
       },
       signers: signerInfo.signers,
     });
-  }
+  };
 
   setCollateralAllocations = async (
     reserve: PublicKey,
     collateral: Collateral[],
-    depositor: PublicKey | Keypair,
+    depositor: PublicKey | Keypair
   ) => {
     const signerInfo = getSignersFromPayer(depositor);
 
@@ -382,7 +393,117 @@ export class BucketClient extends AccountUtils {
       },
       signers: signerInfo.signers,
     });
-  }
+  };
+
+  // in the future, we can enhance the sdk by having it select token mints to swap
+  // between & how much of those tokens to swap. for now, we will require the client,
+  // to provide this information for us.
+  rebalance = async (
+    rebalanceConfig: RebalanceConfig,
+    reserve: PublicKey,
+    payer: PublicKey | Keypair, // must be rebalance authority
+    cluster: Cluster = DEVNET
+  ) => {
+    const signerInfo: SignerInfo = getSignersFromPayer(payer);
+
+    const [crate, _crateBump] = await generateCrateAddress(reserve);
+    const { addr: bucket } = await this.generateBucketAddress(crate);
+
+    // fetch data needed to perform swap; for now, we are only using saber, so we need to
+    // use he swap account for pool with mints A/B.
+    const swapAccount = rebalanceConfig.swapAccount
+      ? rebalanceConfig.swapAccount
+      : await this.saberProvider.getSwapAccountFromMints(
+          rebalanceConfig.tokenA,
+          rebalanceConfig.tokenB,
+          cluster
+        );
+
+    const fetchedStableSwap = await StableSwap.load(
+      this.provider.connection,
+      swapAccount,
+      SWAP_PROGRAM_ID
+    );
+
+    // we need 4 ATAs: crate source, bucket source, crate destination, bucket destination
+    const crateSourceATA = await this.getOrCreateATA(
+      rebalanceConfig.tokenA,
+      crate,
+      signerInfo.payer,
+      this.provider.connection
+    );
+    const bucketSourceATA = await this.getOrCreateATA(
+      rebalanceConfig.tokenA,
+      bucket,
+      signerInfo.payer,
+      this.provider.connection
+    );
+    const crateDestinationATA = await this.getOrCreateATA(
+      rebalanceConfig.tokenB,
+      crate,
+      signerInfo.payer,
+      this.provider.connection
+    );
+    const bucketDestinationATA = await this.getOrCreateATA(
+      rebalanceConfig.tokenB,
+      bucket,
+      signerInfo.payer,
+      this.provider.connection
+    );
+
+    const remainingAccounts = [
+      crateSourceATA.address,
+      bucketSourceATA.address,
+      crateDestinationATA.address,
+      bucketDestinationATA.address,
+    ].map(
+      (acc): AccountMeta => ({
+        pubkey: acc,
+        isSigner: false,
+        isWritable: true,
+      })
+    );
+
+    const swapAmount = computeSwapAmounts(
+      rebalanceConfig.amountIn,
+      rebalanceConfig.maxSlippageBps
+    );
+
+    // note: token A & B accounts are parsed off the remaining accounts
+    return this.bucketProgram.rpc.rebalance(
+      swapAmount.amountIn,
+      swapAmount.minAmountOut,
+      {
+        accounts: {
+          payer: signerInfo.payer,
+          bucket,
+          crateToken: crate,
+          withdrawAuthority: (await this.generateWithdrawAuthority()).addr,
+          swap: fetchedStableSwap.config.swapAccount,
+          swapAuthority: fetchedStableSwap.config.authority,
+          userAuthority: signerInfo.payer,
+          inputAReserve: fetchedStableSwap.state.tokenA.reserve,
+          outputBReserve: fetchedStableSwap.state.tokenB.reserve,
+          outputBFees: fetchedStableSwap.state.tokenB.adminFeeAccount,
+          poolMint: fetchedStableSwap.state.poolTokenMint,
+          crateTokenProgram: CRATE_ADDRESSES.CrateToken,
+          saberProgram: fetchedStableSwap.config.swapProgramID,
+          tokenProgram: TOKEN_PROGRAM_ID,
+        },
+        remainingAccounts,
+        // these instructions ensure ATAs exist before transferring tokens to these
+        // accounts. otherwise, transaction will fail. it's possible that too many ixns
+        // packed into the same tx can result in tx failure.
+        preInstructions: flattenValidInstructions([
+          crateSourceATA,
+          bucketSourceATA,
+          crateDestinationATA,
+          bucketDestinationATA,
+        ]),
+        signers: signerInfo.signers,
+      }
+    );
+  };
 
   deposit = async (
     amount: u64,
@@ -390,14 +511,14 @@ export class BucketClient extends AccountUtils {
     collateral: PublicKey,
     issueAuthority: PublicKey,
     depositor: PublicKey | Keypair,
-    oracle: PublicKey,
+    oracle: PublicKey
   ) => {
     const signerInfo = getSignersFromPayer(depositor);
 
     const [crate, _crateBump] = await generateCrateAddress(reserve);
     const { addr: bucket } = await this.generateBucketAddress(crate);
 
-    const depsitorCollateralATA = await this.getOrCreateATA(
+    const depositorCollateralATA = await this.getOrCreateATA(
       collateral,
       signerInfo.payer,
       signerInfo.payer,
@@ -432,21 +553,15 @@ export class BucketClient extends AccountUtils {
         crateCollateral: crateCollateralATA.address,
         collateralMint: collateral,
         depositor: signerInfo.payer,
-        depositorCollateral: depsitorCollateralATA.address,
+        depositorCollateral: depositorCollateralATA.address,
         depositorReserve: depositorReserveATA.address,
         oracle: oracle,
       },
-      preInstructions: [
-        ...(depsitorCollateralATA.instruction
-          ? [depsitorCollateralATA.instruction]
-          : []),
-        ...(depositorReserveATA.instruction
-          ? [depositorReserveATA.instruction]
-          : []),
-        ...(crateCollateralATA.instruction
-          ? [crateCollateralATA.instruction]
-          : []),
-      ],
+      preInstructions: flattenValidInstructions([
+        depositorCollateralATA,
+        depositorReserveATA,
+        crateCollateralATA,
+      ]),
       signers: signerInfo.signers,
     });
   };

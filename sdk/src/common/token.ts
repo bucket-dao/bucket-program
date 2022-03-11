@@ -13,7 +13,8 @@ import {
   Connection,
 } from "@solana/web3.js";
 
-import { ATAResult, ATAsResult, U64_ZERO } from "./types";
+import { ATAResult, ATAsResult } from "./types";
+import { ZERO_U64 } from "./constant";
 
 export const findAssociatedTokenAddress = async (
   owner: PublicKey,
@@ -117,12 +118,12 @@ export const initTokenAccount = async (
   mint: PublicKey,
   owner: PublicKey,
   payer: PublicKey,
-  amount: u64 = U64_ZERO
+  amount: u64 = ZERO_U64
 ): Promise<TransactionInstruction[]> => {
   const tokenATA = await getOrCreateATA(mint, owner, payer, connection);
 
   const fundTransaction =
-    amount === U64_ZERO
+    amount === ZERO_U64
       ? []
       : [
           Token.createMintToInstruction(
