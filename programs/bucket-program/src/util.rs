@@ -1,6 +1,7 @@
 use {
-    anchor_lang::prelude::*,
     crate::{constant::MAX_BASIS_POINTS, error::ErrorCode, state::bucket::Collateral},
+    anchor_lang::prelude::*,
+    std::cmp::Ordering,
 };
 
 pub fn sum_allocations(collateral: &Vec<Collateral>) -> std::result::Result<u16, ErrorCode> {
@@ -61,4 +62,16 @@ pub fn get_divisor(n: u64) -> Result<u64, ErrorCode> {
     }
 
     Ok(divisor)
+}
+
+pub fn scale_amount_for_decimals(amount: u64, decimals_a: u8, decimals_b: u8) -> Option<u64> {
+    match decimals_a.cmp(&decimals_b) {
+        Ordering::Equal => amount.into(),
+        Ordering::Less => {
+            amount.checked_mul(10u64.checked_pow(decimals_b.checked_sub(decimals_a)?.into())?)
+        }
+        Ordering::Greater => {
+            amount.checked_div(10u64.checked_pow(decimals_a.checked_sub(decimals_b)?.into())?)
+        }
+    }
 }
