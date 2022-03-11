@@ -1,12 +1,12 @@
 use anchor_lang::prelude::*;
 
+mod constant;
 mod context;
 mod error;
 mod instructions;
+mod math;
 mod state;
 mod util;
-mod constant;
-
 use context::*;
 use state::bucket::Collateral;
 
@@ -59,7 +59,7 @@ pub mod bucket_program {
     pub fn authorize_collateral(
         ctx: Context<AuthorizedUpdate>,
         mint: Pubkey,
-        allocation: u16
+        allocation: u16,
     ) -> ProgramResult {
         instructions::authorize_collateral::handle(ctx, mint, allocation)?;
 
@@ -72,10 +72,7 @@ pub mod bucket_program {
     /// handle this scenario and update the collateral allocation accordingly.
     ///
     /// instruction privilege: only bucket authority can call this instruction
-    pub fn remove_collateral(
-        ctx: Context<AuthorizedUpdate>,
-        mint: Pubkey
-    ) -> ProgramResult {
+    pub fn remove_collateral(ctx: Context<AuthorizedUpdate>, mint: Pubkey) -> ProgramResult {
         instructions::remove_collateral::handle(ctx, mint)?;
 
         Ok(())
@@ -89,7 +86,7 @@ pub mod bucket_program {
     /// instruction privilege: only bucket authority can call this instruction
     pub fn set_collateral_allocations(
         ctx: Context<AuthorizedUpdate>,
-        allocations: Vec<Collateral>
+        allocations: Vec<Collateral>,
     ) -> ProgramResult {
         instructions::set_collateral_allocations::handle(ctx, allocations)?;
 
@@ -111,7 +108,7 @@ pub mod bucket_program {
     pub fn rebalance<'info>(
         ctx: Context<'_, '_, '_, 'info, Rebalance<'info>>,
         amount_in: u64,
-        minimum_amount_out: u64
+        minimum_amount_out: u64,
     ) -> ProgramResult {
         instructions::rebalance::handle(ctx, amount_in, minimum_amount_out)?;
 
@@ -128,10 +125,7 @@ pub mod bucket_program {
     /// use the reserve token across the Solana ecosystem.
     ///
     /// instruction privilege: anyone can call this instruction
-    pub fn deposit(
-        ctx: Context<Deposit>,
-        deposit_amount: u64,
-    ) -> ProgramResult {
+    pub fn deposit(ctx: Context<Deposit>, deposit_amount: u64) -> ProgramResult {
         instructions::deposit::handle(ctx, deposit_amount)?;
 
         Ok(())
