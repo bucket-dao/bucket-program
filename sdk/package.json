@@ -29,7 +29,8 @@
         "@types/node-fetch": "^2.6.1",
         "copyfiles": "^2.4.1",
         "fetch": "^1.1.0",
-        "rimraf": "^3.0.2"
+        "rimraf": "^3.0.2",
+        "saber-swap-registry-provider": "^0.0.3"
     },
     "devDependencies": {
         "typescript": "^4.3.5"

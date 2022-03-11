@@ -804,6 +804,17 @@ rpc-websockets@^7.4.2:
     bufferutil "^4.0.1"
     utf-8-validate "^5.0.2"
 
+saber-swap-registry-provider@^0.0.3:
+  version "0.0.3"
+  resolved "https://registry.yarnpkg.com/saber-swap-registry-provider/-/saber-swap-registry-provider-0.0.3.tgz#d15b30319c690cb4c403c1807415c05f2385f54e"
+  integrity sha512-Mz8pORnUWSfXmyt/vRFDQfygBTbOSQDDdOFFmTP19tF55sxrI0otivrBhzabtQxEEkLYY7yWrSGCwQ5kKbiWxg==
+  dependencies:
+    "@saberhq/stableswap-sdk" "^1.12.48"
+    "@solana/spl-token" "^0.1.8"
+    "@solana/web3.js" "^1.31.0"
+    fetch "^1.1.0"
+    rimraf "^3.0.2"
+
 safe-buffer@^5.0.1:
   version "5.2.1"
   resolved "https://registry.yarnpkg.com/safe-buffer/-/safe-buffer-5.2.1.tgz#1eaf9fa9bdb1fdd4ec75f58f9cdb4e6b7827eec6"

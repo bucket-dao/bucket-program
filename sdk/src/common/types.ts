@@ -67,10 +67,15 @@ export interface Collateral {
   allocation: number;
 }
 
+export interface SwapAmount {
+ amountIn: u64,
+ minAmountOut: u64
+}
+
 export interface RebalanceConfig {
   amountIn: number;
   maxSlippageBps: number;
   tokenA: PublicKey;
   tokenB: PublicKey;
-  swapAccount?: PublicKey;
+  swapAccount?: PublicKey; // allows localnet overrides
 }

@@ -1029,6 +1029,8 @@ describe("bucket-program", () => {
       .to.equal(crateTokenCBalanceBefore+expectedSwapAmount.minAmountOut.toNumber());
   });
 
+  // todo: add rebalance test for non-authority entity
+
   it("Update rebalance authority", async () => {
     const { bucket: bucketBefore } = await client.fetchBucket(bucketKey);
 

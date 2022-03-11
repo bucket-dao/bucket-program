@@ -518,6 +518,9 @@ export type BucketProgram = {
             "name": "CollateralSizeLimitsExceeded"
           },
           {
+            "name": "CallerCannotRebalanceCollateral"
+          },
+          {
             "name": "MinCollateralError"
           },
           {
@@ -1101,6 +1104,9 @@ export const IDL: BucketProgram = {
           },
           {
             "name": "CollateralSizeLimitsExceeded"
+          },
+          {
+            "name": "CallerCannotRebalanceCollateral"
           },
           {
             "name": "MinCollateralError"
