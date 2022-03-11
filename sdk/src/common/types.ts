@@ -1,6 +1,31 @@
 import { u64 } from "@solana/spl-token";
 import { Keypair, PublicKey, TransactionInstruction } from "@solana/web3.js";
 
+export interface SwapAmount {
+  amountIn: u64,
+  minAmountOut: u64
+}
+
+export interface Collateral {
+  mint: PublicKey;
+  allocation: number;
+}
+
+export interface Allocation {
+  mint: PublicKey,
+  supply: number
+}
+
+export interface CollateralAllocationResult {
+  allocations: Allocation[],
+  supply: number
+}
+
+export interface SwapAmount {
+  amountIn: u64,
+  minAmountOut: u64
+}
+
 export interface SignerInfo {
   payer: PublicKey;
   signers: Keypair[];

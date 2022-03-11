@@ -90,11 +90,6 @@ pub fn handle<'info>(
     Ok(())
 }
 
-struct ExchangeAmount {
-    amount_in: u64,
-    amount_out: u64,
-}
-
 /// parse remaining accounts array into RebalanceAsset structs and add to a vec
 fn rebalance_asset_from_account_infos<'a, 'info>(
     remaining_accounts: &'a [AccountInfo<'info>],
@@ -239,4 +234,9 @@ fn compute_exchange_amounts<'info>(
         amount_in: amount,
         amount_out,
     })
+}
+
+struct ExchangeAmount {
+    amount_in: u64,
+    amount_out: u64,
 }

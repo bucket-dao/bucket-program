@@ -1,9 +1,11 @@
 use {
     crate::{
         context::Deposit,
+        util::{
+            is_collateral_authorized,
+        },
         error::ErrorCode,
         instructions::pyth_client::get_oracle_price,
-        util::{is_collateral_authorized},
     },
     anchor_lang::prelude::*,
     anchor_spl::token::transfer,
