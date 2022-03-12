@@ -47,6 +47,7 @@ pub struct CreateBucket<'info> {
         init,
         seeds = [
             ISSUE_SEED.as_bytes(),
+            bucket.key().to_bytes().as_ref()
         ],
         bump,
         payer = payer
@@ -58,6 +59,7 @@ pub struct CreateBucket<'info> {
         init,
         seeds = [
             WITHDRAW_SEED.as_bytes(),
+            bucket.key().to_bytes().as_ref()
         ],
         bump,
         payer = payer
@@ -144,6 +146,7 @@ pub struct Rebalance<'info> {
     #[account(
         seeds = [
             WITHDRAW_SEED.as_bytes(),
+            bucket.key().to_bytes().as_ref()
         ],
         bump,
     )]
@@ -211,6 +214,7 @@ pub struct Deposit<'info> {
     #[account(
         seeds = [
             ISSUE_SEED.as_bytes(),
+            common.bucket.key().to_bytes().as_ref()
         ],
         bump,
     )]
@@ -252,6 +256,7 @@ pub struct Redeem<'info> {
     #[account(
         seeds = [
             WITHDRAW_SEED.as_bytes(),
+            common.bucket.key().to_bytes().as_ref()
         ],
         bump,
     )]

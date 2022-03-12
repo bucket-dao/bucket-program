@@ -49,13 +49,16 @@ pub fn handle<'info>(
         minimum_amount_out,
     )?;
 
+    let bucket = ctx.accounts.bucket.key();
+    let withdraw_authority_signer_seeds: &[&[&[u8]]] = &[&[
+        WITHDRAW_SEED.as_bytes(),
+        bucket.as_ref(),
+        &[ctx.accounts.withdraw_authority.bump],
+    ]];
     withdraw(
         ctx.accounts
             .into_withdraw_collateral_context(&rebalance_asset)
-            .with_signer(&[&[
-                WITHDRAW_SEED.as_bytes(),
-                &[ctx.accounts.withdraw_authority.bump],
-            ]]),
+            .with_signer(withdraw_authority_signer_seeds),
         swap_amounts.amount_in,
     )?;
 
