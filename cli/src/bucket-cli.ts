@@ -218,13 +218,15 @@ programCommand("deposit")
   .action(async (_, cmd) => {
     const { keypair, env, mint, collateral, amount } = cmd.opts();
 
+    const _mint = new PublicKey(mint);
+    const _collateral = new PublicKey(collateral);
+
     const walletKeyPair: Keypair = loadWalletKey(keypair);
     const _client = createClient(env, walletKeyPair);
 
-    const { addr: crate } = await _client.generateIssueAuthority();
+    const [crate, _bump] = await generateCrateAddress(_mint);
     const { addr: bucket } = await _client.generateBucketAddress(crate);
-    const _mint = new PublicKey(mint);
-    const _collateral = new PublicKey(collateral);
+    const { addr: iAuthority } = await _client.generateIssueAuthority(bucket);
 
     // using devnet usdc oracle for now
     const oracle = new PublicKey(
@@ -232,12 +234,13 @@ programCommand("deposit")
       // "C5wDxND9E61RZ1wZhaSTWkoA8udumaHnoQY6BBsiaVpn"
       "38xoQ4oeJCBrcVvca2cGk7iV1dAfrmTR1kmhSCJQ8Jto"
     );
+
     const amountU64 = new u64(amount);
     await _client.deposit(
       amountU64,
       _mint,
       _collateral,
-      crate,
+      iAuthority,
       walletKeyPair,
       oracle
     );
@@ -268,7 +271,7 @@ programCommand("redeem")
 
     const [crate, _bump] = await generateCrateAddress(_mint);
     const { addr: bucket } = await _client.generateBucketAddress(crate);
-    const { addr: wAuthority } = await _client.generateWithdrawAuthority();
+    const { addr: wAuthority } = await _client.generateWithdrawAuthority(bucket);
 
     // get authorized mints by bucket if not provided
     let _collaterals: PublicKey[] = [];
@@ -292,20 +295,13 @@ programCommand("redeem")
       `No valid collateral mints supplied or found for bucket ${bucket.toBase58()}`
     );
 
-    // using devnet usdc oracle for now
-    const oracle = new PublicKey(
-      // "5U3bH5b6XtG99aVWLqwVzYPVpQiFHytBD68Rz2eFPZd7"
-      // "C5wDxND9E61RZ1wZhaSTWkoA8udumaHnoQY6BBsiaVpn"
-      "38xoQ4oeJCBrcVvca2cGk7iV1dAfrmTR1kmhSCJQ8Jto"
-    );
     const amountU64 = new u64(amount);
     await _client.redeem(
       amountU64,
       _mint,
       _collaterals,
       wAuthority,
-      walletKeyPair,
-      oracle
+      walletKeyPair
     );
 
     log.info("===========================================");

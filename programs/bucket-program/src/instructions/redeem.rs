@@ -37,9 +37,12 @@ pub fn handle<'info>(
     if num_remaining_accounts == 0 {
         return Ok(());
     }
+
     let remaining_accounts_iter = &mut ctx.remaining_accounts.iter();
+    let bucket = ctx.accounts.common.bucket.key();
     let withdraw_authority_signer_seeds: &[&[&[u8]]] = &[&[
         WITHDRAW_SEED.as_bytes(),
+        bucket.as_ref(),
         &[ctx.accounts.withdraw_authority.bump],
     ]];
 

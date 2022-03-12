@@ -1,6 +1,6 @@
 use {
     crate::{
-        constant::TARGET_ORACLE_PRECISION,
+        constant::{ISSUE_SEED, TARGET_ORACLE_PRECISION},
         context::Deposit,
         error::ErrorCode,
         state::oracle::{get_oracle_price, OraclePriceData},
@@ -41,10 +41,17 @@ pub fn handle(ctx: Context<Deposit>, deposit_amount: u64) -> ProgramResult {
         .unwrap()
         .checked_div(10_i128.pow(TARGET_ORACLE_PRECISION))
         .unwrap();
+
+    let bucket = ctx.accounts.common.bucket.key();
+    let issue_authority_signer_seeds: &[&[&[u8]]] = &[&[
+        ISSUE_SEED.as_bytes(),
+        bucket.as_ref(),
+        &[ctx.accounts.issue_authority.bump],
+    ]];
     issue(
         ctx.accounts
             .into_issue_reserve_context()
-            .with_signer(&[&[b"issue", &[ctx.accounts.issue_authority.bump]]]),
+            .with_signer(issue_authority_signer_seeds),
         issue_amount.try_into().unwrap(),
     )?;
 

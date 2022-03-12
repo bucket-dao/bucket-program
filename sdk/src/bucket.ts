@@ -110,9 +110,10 @@ export class BucketClient extends AccountUtils {
   };
 
   generateIssueAuthority = async (
+    bucket: PublicKey,
     programID: PublicKey = this.bucketProgram.programId
   ) => {
-    const [addr, bump] = await this.findProgramAddress(programID, ["issue"]);
+    const [addr, bump] = await this.findProgramAddress(programID, ["issue", bucket]);
 
     return {
       addr,
@@ -121,9 +122,10 @@ export class BucketClient extends AccountUtils {
   };
 
   generateWithdrawAuthority = async (
+    bucket: PublicKey,
     programID: PublicKey = this.bucketProgram.programId
   ) => {
-    const [addr, bump] = await this.findProgramAddress(programID, ["withdraw"]);
+    const [addr, bump] = await this.findProgramAddress(programID, ["withdraw", bucket]);
 
     return {
       addr,
@@ -284,9 +286,9 @@ export class BucketClient extends AccountUtils {
       crate
     );
     const { addr: issueAuthority, bump: issueBump } =
-      await this.generateIssueAuthority();
+      await this.generateIssueAuthority(bucket);
     const { addr: withdrawAuthority, bump: withdrawBump } =
-      await this.generateWithdrawAuthority();
+      await this.generateWithdrawAuthority(bucket);
 
     const signerInfo = getSignersFromPayer(payer);
     const crateATA = await this.getOrCreateATA(
@@ -602,7 +604,7 @@ export class BucketClient extends AccountUtils {
           payer: signerInfo.payer,
           bucket,
           crateToken: crate,
-          withdrawAuthority: (await this.generateWithdrawAuthority()).addr,
+          withdrawAuthority: (await this.generateWithdrawAuthority(bucket)).addr,
           swap: fetchedStableSwap.config.swapAccount,
           swapAuthority: fetchedStableSwap.config.authority,
           userAuthority: signerInfo.payer,
