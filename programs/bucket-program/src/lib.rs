@@ -4,9 +4,9 @@ mod constant;
 mod context;
 mod error;
 mod instructions;
+mod math;
 mod state;
 mod util;
-
 use context::*;
 use state::bucket::Collateral;
 
@@ -78,10 +78,7 @@ pub mod bucket_program {
     /// will be small for miniscule collateral allocations. but, we still need to resolve this issue.
     /// e.g. consider if we authorize collateral D & E, deposit some of D & E, then remove collateral D & E.
     /// under curent logic, the redemption amount will be off by some value.
-    pub fn remove_collateral(
-        ctx: Context<AuthorizedUpdate>,
-        mint: Pubkey
-    ) -> ProgramResult {
+    pub fn remove_collateral(ctx: Context<AuthorizedUpdate>, mint: Pubkey) -> ProgramResult {
         instructions::remove_collateral::handle(ctx, mint)?;
 
         Ok(())

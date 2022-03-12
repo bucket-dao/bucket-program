@@ -696,7 +696,6 @@ export class BucketClient extends AccountUtils {
     collateralTokens: PublicKey[],
     withdrawAuthority: PublicKey,
     withdrawer: PublicKey | Keypair,
-    oracle: PublicKey
   ) => {
     const signerInfo = getSignersFromPayer(withdrawer);
 
@@ -772,7 +771,6 @@ export class BucketClient extends AccountUtils {
         withdrawAuthority: withdrawAuthority,
         withdrawer: signerInfo.payer,
         withdrawerReserve: withdrawerReserveATA.address,
-        oracle: oracle,
       },
       remainingAccounts,
       preInstructions: createATAInstructions,

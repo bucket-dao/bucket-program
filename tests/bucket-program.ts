@@ -888,7 +888,6 @@ describe("bucket-program", () => {
 
   it("Redeem tokens", async () => {
     const tokenBalances: { [mint: string]: TokenBalance } = {};
-    const oracle = await mockOracle(1);
     // fetch number of redeemable reserve tokens
     const userAReserveBefore = await client.fetchTokenBalance(
       reserve.publicKey,
@@ -922,7 +921,6 @@ describe("bucket-program", () => {
       [collateralA.publicKey, collateralB.publicKey, collateralC.publicKey],
       withdrawAuthority,
       userA,
-      oracle,
     );
 
     // fetch withdrawer & crate ATA balances after redeem

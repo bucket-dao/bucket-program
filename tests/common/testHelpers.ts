@@ -192,6 +192,8 @@ const parsePriceData = (data) => {
 	// Time-weighted average price.
 	const twapComponent = readBigInt64LE(data, 48);
 	const twap = Number(twapComponent) * 10 ** exponent;
+	const twacComponent = data.readBigUInt64LE(8);
+	const twac = Number(twacComponent) * 10 ** exponent;
 	// Annualized price volatility.
 	const avolComponent = readBigUInt64LE(data, 56);
 	const avol = Number(avolComponent) * 10 ** exponent;

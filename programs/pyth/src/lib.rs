@@ -23,7 +23,6 @@ pub mod pyth {
 
         price_oracle.agg.price = price;
         price_oracle.agg.conf = 0;
-
         price_oracle.twap = price;
         price_oracle.expo = expo;
         price_oracle.ptype = pc::PriceType::Price;

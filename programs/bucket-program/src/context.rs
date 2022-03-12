@@ -263,9 +263,6 @@ pub struct Redeem<'info> {
         constraint = withdrawer_reserve.mint == common.crate_mint.key(),
     )]
     pub withdrawer_reserve: Box<Account<'info, TokenAccount>>,
-
-    /// CHECK: required for CPI into pyth
-    pub oracle: AccountInfo<'info>,
 }
 
 #[derive(Accounts)]

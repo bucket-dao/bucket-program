@@ -400,11 +400,6 @@ export type BucketProgram = {
           "name": "withdrawerReserve",
           "isMut": true,
           "isSigner": false
-        },
-        {
-          "name": "oracle",
-          "isMut": false,
-          "isSigner": false
         }
       ],
       "args": [
@@ -495,39 +490,15 @@ export type BucketProgram = {
       }
     },
     {
-      "name": "ErrorCode",
+      "name": "OracleSource",
       "type": {
         "kind": "enum",
         "variants": [
           {
-            "name": "WrongBurnError"
+            "name": "Pyth"
           },
           {
-            "name": "AllocationBpsError"
-          },
-          {
-            "name": "WrongCollateralError"
-          },
-          {
-            "name": "CollateralAlreadyAuthorizedError"
-          },
-          {
-            "name": "CollateralDoesNotExistError"
-          },
-          {
-            "name": "CollateralSizeLimitsExceeded"
-          },
-          {
-            "name": "CallerCannotRebalanceCollateral"
-          },
-          {
-            "name": "MinCollateralError"
-          },
-          {
-            "name": "MathError"
-          },
-          {
-            "name": "NumberOfSizeNotSupported"
+            "name": "Switchboard"
           }
         ]
       }
@@ -582,6 +553,73 @@ export type BucketProgram = {
           }
         ]
       }
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "WrongBurnError",
+      "msg": "Must burn reserve token"
+    },
+    {
+      "code": 6001,
+      "name": "AllocationBpsError",
+      "msg": "Allocation bps error"
+    },
+    {
+      "code": 6002,
+      "name": "WrongCollateralError",
+      "msg": "Must deposit an approved collateral mint"
+    },
+    {
+      "code": 6003,
+      "name": "CollateralAlreadyAuthorizedError",
+      "msg": "Cannot re-authorized a collateral mint authorized"
+    },
+    {
+      "code": 6004,
+      "name": "CollateralDoesNotExistError",
+      "msg": "Cannot de-authorized a collateral mint that does not exist"
+    },
+    {
+      "code": 6005,
+      "name": "CollateralSizeLimitsExceeded",
+      "msg": "Collateral size limits exceeded"
+    },
+    {
+      "code": 6006,
+      "name": "CallerCannotRebalanceCollateral",
+      "msg": "Caller is not authorized to rebalance specified mints"
+    },
+    {
+      "code": 6007,
+      "name": "MinCollateralError",
+      "msg": "Must maintain at least 1 approved collateral mint"
+    },
+    {
+      "code": 6008,
+      "name": "NumberOfSizeNotSupported",
+      "msg": "Number is too large and is not supported"
+    },
+    {
+      "code": 6009,
+      "name": "UnableToLoadOracle",
+      "msg": "Unable To Load Oracles"
+    },
+    {
+      "code": 6010,
+      "name": "MathError",
+      "msg": "Math Error"
+    },
+    {
+      "code": 6011,
+      "name": "CastingFailure",
+      "msg": "Casting Failure"
+    },
+    {
+      "code": 6012,
+      "name": "InvalidOracle",
+      "msg": "Oracle Values are invalid"
     }
   ]
 };
@@ -988,11 +1026,6 @@ export const IDL: BucketProgram = {
           "name": "withdrawerReserve",
           "isMut": true,
           "isSigner": false
-        },
-        {
-          "name": "oracle",
-          "isMut": false,
-          "isSigner": false
         }
       ],
       "args": [
@@ -1083,39 +1116,15 @@ export const IDL: BucketProgram = {
       }
     },
     {
-      "name": "ErrorCode",
+      "name": "OracleSource",
       "type": {
         "kind": "enum",
         "variants": [
           {
-            "name": "WrongBurnError"
+            "name": "Pyth"
           },
           {
-            "name": "AllocationBpsError"
-          },
-          {
-            "name": "WrongCollateralError"
-          },
-          {
-            "name": "CollateralAlreadyAuthorizedError"
-          },
-          {
-            "name": "CollateralDoesNotExistError"
-          },
-          {
-            "name": "CollateralSizeLimitsExceeded"
-          },
-          {
-            "name": "CallerCannotRebalanceCollateral"
-          },
-          {
-            "name": "MinCollateralError"
-          },
-          {
-            "name": "MathError"
-          },
-          {
-            "name": "NumberOfSizeNotSupported"
+            "name": "Switchboard"
           }
         ]
       }
@@ -1170,6 +1179,73 @@ export const IDL: BucketProgram = {
           }
         ]
       }
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "WrongBurnError",
+      "msg": "Must burn reserve token"
+    },
+    {
+      "code": 6001,
+      "name": "AllocationBpsError",
+      "msg": "Allocation bps error"
+    },
+    {
+      "code": 6002,
+      "name": "WrongCollateralError",
+      "msg": "Must deposit an approved collateral mint"
+    },
+    {
+      "code": 6003,
+      "name": "CollateralAlreadyAuthorizedError",
+      "msg": "Cannot re-authorized a collateral mint authorized"
+    },
+    {
+      "code": 6004,
+      "name": "CollateralDoesNotExistError",
+      "msg": "Cannot de-authorized a collateral mint that does not exist"
+    },
+    {
+      "code": 6005,
+      "name": "CollateralSizeLimitsExceeded",
+      "msg": "Collateral size limits exceeded"
+    },
+    {
+      "code": 6006,
+      "name": "CallerCannotRebalanceCollateral",
+      "msg": "Caller is not authorized to rebalance specified mints"
+    },
+    {
+      "code": 6007,
+      "name": "MinCollateralError",
+      "msg": "Must maintain at least 1 approved collateral mint"
+    },
+    {
+      "code": 6008,
+      "name": "NumberOfSizeNotSupported",
+      "msg": "Number is too large and is not supported"
+    },
+    {
+      "code": 6009,
+      "name": "UnableToLoadOracle",
+      "msg": "Unable To Load Oracles"
+    },
+    {
+      "code": 6010,
+      "name": "MathError",
+      "msg": "Math Error"
+    },
+    {
+      "code": 6011,
+      "name": "CastingFailure",
+      "msg": "Casting Failure"
+    },
+    {
+      "code": 6012,
+      "name": "InvalidOracle",
+      "msg": "Oracle Values are invalid"
     }
   ]
 };

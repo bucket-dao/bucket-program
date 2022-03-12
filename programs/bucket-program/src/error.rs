@@ -18,10 +18,16 @@ pub enum ErrorCode {
     CallerCannotRebalanceCollateral,
     #[msg("Must maintain at least 1 approved collateral mint")]
     MinCollateralError,
-    #[msg("Math Error")]
-    MathError,
     #[msg("Number is too large and is not supported")]
     NumberOfSizeNotSupported,
+    #[msg("Unable To Load Oracles")]
+    UnableToLoadOracle,
+    #[msg("Math Error")]
+    MathError,
+    #[msg("Casting Failure")]
+    CastingFailure,
+    #[msg("Oracle Values are invalid")]
+    InvalidOracle,
 }
 
 
