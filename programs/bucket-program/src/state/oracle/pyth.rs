@@ -157,13 +157,11 @@ pub fn get_pyth_price(
     clock_slot: u64,
     target_precision: u32,
 ) -> Result<(i128, i128, u128, i64), ErrorCode> {
-    // equivalent to let oracle_price in old pyth_client
     let price_account = Price::load(&price_oracle).unwrap();
 
     let oracle_price = cast_to_i128(price_account.agg.price)?;
     let oracle_conf = cast_to_u128(price_account.agg.conf)?;
-    let oracle_twap: i128 = cast_to_i128(price_account.twap)?.try_into().unwrap(); // this is where error arose
-                                                                                   //let oracle_twac: i32 = 1; // cast_to_u128(price_account.twac.val)?;
+    let oracle_twap: i128 = cast_to_i128(price_account.twap)?.try_into().unwrap();
 
     let orace_price_scaled: i128 = oracle_price
         .checked_mul(10i128.pow(target_precision))
