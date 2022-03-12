@@ -400,11 +400,6 @@ export type BucketProgram = {
           "name": "withdrawerReserve",
           "isMut": true,
           "isSigner": false
-        },
-        {
-          "name": "oracle",
-          "isMut": false,
-          "isSigner": false
         }
       ],
       "args": [
@@ -593,31 +588,36 @@ export type BucketProgram = {
     },
     {
       "code": 6006,
+      "name": "CallerCannotRebalanceCollateral",
+      "msg": "Caller is not authorized to rebalance specified mints"
+    },
+    {
+      "code": 6007,
       "name": "MinCollateralError",
       "msg": "Must maintain at least 1 approved collateral mint"
     },
     {
-      "code": 6007,
+      "code": 6008,
       "name": "NumberOfSizeNotSupported",
       "msg": "Number is too large and is not supported"
     },
     {
-      "code": 6008,
+      "code": 6009,
       "name": "UnableToLoadOracle",
       "msg": "Unable To Load Oracles"
     },
     {
-      "code": 6009,
+      "code": 6010,
       "name": "MathError",
       "msg": "Math Error"
     },
     {
-      "code": 6010,
+      "code": 6011,
       "name": "CastingFailure",
       "msg": "Casting Failure"
     },
     {
-      "code": 6011,
+      "code": 6012,
       "name": "InvalidOracle",
       "msg": "Oracle Values are invalid"
     }
@@ -1026,11 +1026,6 @@ export const IDL: BucketProgram = {
           "name": "withdrawerReserve",
           "isMut": true,
           "isSigner": false
-        },
-        {
-          "name": "oracle",
-          "isMut": false,
-          "isSigner": false
         }
       ],
       "args": [
@@ -1219,31 +1214,36 @@ export const IDL: BucketProgram = {
     },
     {
       "code": 6006,
+      "name": "CallerCannotRebalanceCollateral",
+      "msg": "Caller is not authorized to rebalance specified mints"
+    },
+    {
+      "code": 6007,
       "name": "MinCollateralError",
       "msg": "Must maintain at least 1 approved collateral mint"
     },
     {
-      "code": 6007,
+      "code": 6008,
       "name": "NumberOfSizeNotSupported",
       "msg": "Number is too large and is not supported"
     },
     {
-      "code": 6008,
+      "code": 6009,
       "name": "UnableToLoadOracle",
       "msg": "Unable To Load Oracles"
     },
     {
-      "code": 6009,
+      "code": 6010,
       "name": "MathError",
       "msg": "Math Error"
     },
     {
-      "code": 6010,
+      "code": 6011,
       "name": "CastingFailure",
       "msg": "Casting Failure"
     },
     {
-      "code": 6011,
+      "code": 6012,
       "name": "InvalidOracle",
       "msg": "Oracle Values are invalid"
     }

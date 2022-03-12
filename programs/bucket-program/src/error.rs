@@ -14,6 +14,8 @@ pub enum ErrorCode {
     CollateralDoesNotExistError,
     #[msg("Collateral size limits exceeded")]
     CollateralSizeLimitsExceeded,
+    #[msg("Caller is not authorized to rebalance specified mints")]
+    CallerCannotRebalanceCollateral,
     #[msg("Must maintain at least 1 approved collateral mint")]
     MinCollateralError,
     #[msg("Number is too large and is not supported")]
@@ -27,6 +29,7 @@ pub enum ErrorCode {
     #[msg("Oracle Values are invalid")]
     InvalidOracle,
 }
+
 
 #[macro_export]
 macro_rules! math_error {

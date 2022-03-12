@@ -1,7 +1,6 @@
 import * as anchor from "@project-serum/anchor";
 import { Program, Provider, Idl, Wallet } from "@project-serum/anchor";
-import { u64 } from "@solana/spl-token";
-import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { TOKEN_PROGRAM_ID, Token, u64 } from "@solana/spl-token";
 import {
   AccountMeta,
   Connection,
@@ -16,10 +15,8 @@ import {
   CRATE_ADDRESSES,
   generateCrateAddress,
 } from "@crateprotocol/crate-sdk";
-import {
-  StableSwap,
-  SWAP_PROGRAM_ID,
-} from "@saberhq/stableswap-sdk";
+import { StableSwap, SWAP_PROGRAM_ID } from "@saberhq/stableswap-sdk";
+import { SaberRegistryProvider } from "saber-swap-registry-provider";
 
 import { AccountUtils } from "./common/account-utils";
 import {
@@ -27,11 +24,17 @@ import {
   SignerInfo,
   PdaDerivationResult,
   Collateral,
-  RebalanceConfig
+  CollateralAllocationResult,
+  RebalanceConfig,
 } from "./common/types";
-import { addIxn, getSignersFromPayer, flattenValidInstructions } from "./common/util";
+import {
+  addIxn,
+  getSignersFromPayer,
+  flattenValidInstructions,
+  computeMappingFromList,
+  computeSwapAmounts
+} from "./common/util";
 import { BucketProgram } from "./types/bucket_program";
-import { SaberProvider, computeSwapAmounts } from "./providers/saber";
 import { DEVNET } from "./common/constant";
 
 export class BucketClient extends AccountUtils {
@@ -39,21 +42,26 @@ export class BucketClient extends AccountUtils {
   provider!: Provider;
   bucketProgram!: Program<BucketProgram>;
 
+  readonlyKeypair!: Keypair;
+
   // providers
-  saberProvider!: SaberProvider;
+  saberProvider!: SaberRegistryProvider;
 
   constructor(
     conn: Connection,
     wallet: anchor.Wallet,
     idl?: Idl,
-    programId?: PublicKey
+    programId?: PublicKey,
   ) {
     super(conn);
     this.wallet = wallet;
     this.setProvider();
     this.setBucketProgram(idl, programId);
 
-    this.saberProvider = new SaberProvider();
+    // leakedKeypair is sometimes used for read-only operations
+    this.readonlyKeypair = Keypair.generate();
+    
+    this.saberProvider = new SaberRegistryProvider();
   }
 
   setProvider = () => {
@@ -187,9 +195,15 @@ export class BucketClient extends AccountUtils {
     for (const mint of mints) {
       const tokenAccount = await this.getTokenAccountByMint(owner, mint);
 
+      // ignore: no account data
+      if (!tokenAccount.value || tokenAccount.value.length === 0) {
+        continue;
+      }
+
       const amount = new u64(
         +tokenAccount.value[0].account.data.parsed.info.tokenAmount.amount
       );
+
       const decimals: number =
         tokenAccount.value[0].account.data.parsed.info.tokenAmount.decimals;
 
@@ -208,22 +222,51 @@ export class BucketClient extends AccountUtils {
   // given mints and token amount, we can additionally fetch overall supply and price to back into floating
   // price of the reserve asset. this is only if price is a floating peg.
   fetchParsedTokenAccountsForAuthorizedCollateral = async (
-    bucket: PublicKey | any, // how to specify bucket type from anchor types?
+    bucket: PublicKey, // optionally pass in bucket obj?
     owner: PublicKey,
     mints?: PublicKey[]
   ) => {
-    const parsedTokenAccounts: ParsedTokenAccount[] = mints
-      ? await this.fetchParsedTokenAccountsByMints(mints, owner)
-      : await this.fetchParsedTokenAccounts(owner);
+    const _mints = mints
+      ? mints
+      : (await this.fetchBucket(bucket)).collateral.map(collateral => collateral.mint);
+    return this.fetchParsedTokenAccountsByMints(_mints, owner);
+  };
 
-    const { bucket: _bucket, collateral } =
-      bucket instanceof PublicKey ? await this.fetchBucket(bucket) : bucket;
-
-    const _collateral: string[] = collateral.map((item: PublicKey) =>
-      item.toBase58()
+  fetchCollateralAllocations = async (
+    bucket: PublicKey,
+    crate: PublicKey
+  ): Promise<CollateralAllocationResult> => {
+    const tokens = await this.fetchParsedTokenAccountsForAuthorizedCollateral(
+      bucket,
+      crate
     );
-    return parsedTokenAccounts.filter((account) =>
-      _collateral.includes(account.mint.toBase58())
+
+    return {
+      allocations: tokens.map((token) => {
+        return {
+          mint: token.mint,
+          supply: token.amount.toNumber(),
+        };
+      }),
+      supply: tokens
+        .map((token) => token.amount.toNumber())
+        .reduce((a, b) => a + b)
+    };
+  };
+
+  isAnyUnauthorizedCollateralTokensToRemove = async (reserve: PublicKey) => {
+    const [crate, _crateBump] = await generateCrateAddress(reserve);
+    const { addr: bucketAddress } = await this.generateBucketAddress(crate);
+    const { collateral } = await this.fetchBucket(bucketAddress);
+
+    // todo: this will break if someone just randomly transfers token to a crate ATA.
+    // figure out how to verify the unauthorized tokens.
+    const crateATAs = await this.fetchParsedTokenAccounts(crate);
+    const _collateral = collateral.map((c) => c.mint.toBase58());
+
+    return (
+      crateATAs.filter((ata) => _collateral.includes(ata.mint.toBase58()))
+        .length > 0
     );
   };
 
@@ -312,7 +355,7 @@ export class BucketClient extends AccountUtils {
       },
       signers: signerInfo.signers,
     });
-  }
+  };
 
   authorizeCollateral = async (
     collateral: PublicKey,
@@ -375,13 +418,112 @@ export class BucketClient extends AccountUtils {
     });
   };
 
+  // in the underlying swap, we need token A and token B. the client supplies
+  // mintToRemove = token A. we will query current collateral amounts to figure
+  // out what collateral mint to use as token B.
+  removeUnauthorizedCollateralTokens = async (
+    mintToRemove: PublicKey,
+    reserve: PublicKey,
+    payer: PublicKey | Keypair,
+    cluster: Cluster = DEVNET,
+    swapAccount?: PublicKey // allow localnet overrides
+  ) => {
+    const [crate, _crateBump] = await generateCrateAddress(reserve);
+    const { addr: bucketAddress } = await this.generateBucketAddress(crate);
+    const { collateral } = await this.fetchBucket(bucketAddress);
+
+    const _mintToRemove = mintToRemove.toBase58();
+
+    const collateralMints = collateral.map((c) => c.mint);
+    if (collateralMints.length === 0) {
+      throw new Error("no authorized collateral tokens to swap with");
+    }
+
+    if (
+      collateralMints.map((mint) => mint.toBase58()).includes(_mintToRemove)
+    ) {
+      throw new Error(`${_mintToRemove} is an authorized mint`);
+    }
+
+    const mintAmountToRemove = (
+      await this.fetchParsedTokenAccountsByMints([mintToRemove], crate)[0]
+    ).amount;
+
+    const authorizedCollateralATAs =
+      await this.fetchParsedTokenAccountsForAuthorizedCollateral(
+        bucketAddress,
+        crate,
+        collateral.map((c) => c.mint)
+      );
+
+    const reserveSupply = (
+      await new Token(
+        this.conn,
+        reserve,
+        this.bucketProgram.programId,
+        this.readonlyKeypair
+      ).getMintInfo()
+    ).supply.toNumber();
+
+    const collateralMintToAllocation = computeMappingFromList<Collateral>(
+      collateral,
+      (collateral: Collateral) => collateral.mint.toBase58()
+    );
+
+    // find an authorized collateral that is max distance away from target allocation;
+    // alternatively, we will break early if we find a collateral that is mintAmountToRemove
+    // amount away from the target allocation.
+    let collateralToCredit = {
+      mint: PublicKey.default, // dummy value
+      allocationDifference: 0,
+    };
+
+    for (const ata of authorizedCollateralATAs) {
+      const collateralShareOfSupply =
+        reserveSupply *
+        (collateralMintToAllocation[ata.mint.toBase58()].allocation / 10_000);
+
+      const _allocationDifference =
+        collateralShareOfSupply - ata.amount.toNumber();
+      // current ATA amount is sufficiently far from the target allocation. greedily choose this mint.
+      if (_allocationDifference > mintAmountToRemove) {
+        collateralToCredit = {
+          mint: ata.mint,
+          allocationDifference: 0,
+        };
+        break;
+      } else {
+        if (_allocationDifference > collateralToCredit.allocationDifference) {
+          collateralToCredit = {
+            mint: ata.mint,
+            allocationDifference: _allocationDifference,
+          };
+        }
+      }
+    }
+
+    return this.rebalance(
+      {
+        // we decide amount to transfer on-chain
+        amountIn: 0,
+        maxSlippageBps: 0,
+        tokenA: mintToRemove,
+        tokenB: collateralToCredit.mint,
+        swapAccount,
+      },
+      reserve,
+      payer,
+      cluster
+    );
+  };
+
   // in the future, we can enhance the sdk by having it select token mints to swap
   // between & how much of those tokens to swap. for now, we will require the client,
   // to provide this information for us.
   rebalance = async (
     rebalanceConfig: RebalanceConfig,
     reserve: PublicKey,
-    payer: PublicKey | Keypair, // must be rebalance authority
+    payer: PublicKey | Keypair,
     cluster: Cluster = DEVNET
   ) => {
     const signerInfo: SignerInfo = getSignersFromPayer(payer);
@@ -432,6 +574,8 @@ export class BucketClient extends AccountUtils {
     );
 
     const remainingAccounts = [
+      rebalanceConfig.tokenA,
+      rebalanceConfig.tokenB,
       crateSourceATA.address,
       bucketSourceATA.address,
       crateDestinationATA.address,
@@ -552,7 +696,6 @@ export class BucketClient extends AccountUtils {
     collateralTokens: PublicKey[],
     withdrawAuthority: PublicKey,
     withdrawer: PublicKey | Keypair,
-    oracle: PublicKey
   ) => {
     const signerInfo = getSignersFromPayer(withdrawer);
 
@@ -628,7 +771,6 @@ export class BucketClient extends AccountUtils {
         withdrawAuthority: withdrawAuthority,
         withdrawer: signerInfo.payer,
         withdrawerReserve: withdrawerReserveATA.address,
-        oracle: oracle,
       },
       remainingAccounts,
       preInstructions: createATAInstructions,
