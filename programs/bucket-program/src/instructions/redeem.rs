@@ -3,6 +3,7 @@ use {
         constant::WITHDRAW_SEED,
         context::{Redeem, RedeemAsset},
         error::ErrorCode,
+        util::is_collateral_authorized
     },
     anchor_lang::{prelude::*, solana_program::account_info::next_account_infos},
     anchor_spl::token::burn,
@@ -55,6 +56,12 @@ pub fn handle<'info>(
             &mut next_account_infos(remaining_accounts_iter, 5)?,
             &[],
         )?;
+
+        // prevent signer from redeeming mints that are not authorized
+        invariant!(
+            is_collateral_authorized(&ctx.accounts.common.bucket.collateral, asset.collateral_mint.key()),
+            ErrorCode::CollateralDoesNotExistError
+        );
 
         // compute an equal share of each collateral based on each's supply. over time,
         // this piece of logic will become increasingly complex to account for select

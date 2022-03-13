@@ -49,6 +49,12 @@ pub fn handle<'info>(
         minimum_amount_out,
     )?;
 
+    msg!(
+        "computed swap values: in = {}, out = {}",
+        swap_amounts.amount_in,
+        swap_amounts.amount_out
+    );
+
     let bucket = ctx.accounts.bucket.key();
     let withdraw_authority_signer_seeds: &[&[&[u8]]] = &[&[
         WITHDRAW_SEED.as_bytes(),
@@ -179,7 +185,12 @@ fn get_swap_amounts_for_caller<'info>(
         // while making sure that max slippage stays under some predefined threshold?
         // this sttic value may lead to routine failed swaps depending on the pool &
         // per-asset liquidity depth. revisit later.
-        let max_slippage_bps: u64 = 150; // 1.5%
+        //
+        // note: anything lower than 25% slippage causes swap tests to fail on localnet
+        // despite sufficient (~50M) per-asset liquidity. only used in localnet/devnet for testing. need
+        // more research to understand how our approach should evolv for an eventual
+        // mainnet launch.
+        let max_slippage_bps: u64 = 2_500;
 
         // we must scale token B's expected amount out based on token A's decimals.
         // otherwise, the difference in number of tokens received could be orders
@@ -203,7 +214,7 @@ fn get_swap_amounts_for_caller<'info>(
             scaled_amount,
             rebalance_asset.token_b.decimals,
             max_slippage_bps,
-        )?)
+     )?)
     }
 }
 
@@ -230,7 +241,11 @@ fn compute_exchange_amounts<'info>(
     let amount_out = amount
         .checked_mul(slippage_factor)
         .ok_or_else(math_error!())?
-        .checked_div(decimals as u64)
+        .checked_div(
+            10_u64
+                .checked_pow(decimals as u32)
+                .ok_or_else(math_error!())?,
+        )
         .ok_or_else(math_error!())?;
 
     Ok(ExchangeAmount {

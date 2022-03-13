@@ -125,8 +125,7 @@ pub struct AuthorizedUpdate<'info> {
 
 #[derive(Accounts)]
 pub struct Rebalance<'info> {
-    // functionality is slightly more flexible if the payer is the rebalance authority. we decide in the
-    // instruction.
+    // functionality is slightly more flexible if the payer is the rebalance authority. we decide in the instruction.
     #[account(mut)]
     pub payer: Signer<'info>,
 
