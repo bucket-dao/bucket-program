@@ -35,7 +35,11 @@ import {
   Transaction,
   sendAndConfirmTransaction as realSendAndConfirmTransaction,
 } from "@solana/web3.js";
-import { SignerWallet, Provider, SolanaProvider } from "@saberhq/solana-contrib";
+import {
+  SignerWallet,
+  Provider,
+  SolanaProvider,
+} from "@saberhq/solana-contrib";
 import { Saber } from "@saberhq/saber-periphery";
 
 import type { ISeedPoolAccountsFn } from "@saberhq/stableswap-sdk";
@@ -56,26 +60,10 @@ export const FEES: Fees = {
   withdraw: DEFAULT_FEE,
 };
 
-
-export const makeSDK = (): Saber => {
-  const ANCHOR_PROVIDER_URL = process.env.ANCHOR_PROVIDER_URL;
-  if (!ANCHOR_PROVIDER_URL) {
-    throw new Error("no anchor provider URL");
-  }
-  const anchorProvider = anchor.getProvider();
-  // if the program isn't loaded, load the default
-  const provider = SolanaProvider.init({
-    connection: anchorProvider.connection,
-    wallet: anchorProvider.wallet,
-    opts: anchorProvider.opts,
-  });
-  return Saber.load({ provider });
-};
-
 export const setupPoolInitialization = (
+  minterSigner: Keypair,
   mintA: PublicKey,
   mintB: PublicKey,
-  minterSigner: Keypair,
   initialTokenAAmount: number = INITIAL_TOKEN_A_AMOUNT,
   initialTokenBAmount: number = INITIAL_TOKEN_B_AMOUNT
 ) => {
@@ -218,14 +206,13 @@ export class PoolClient {
   }
 
   setupThenDeployNewSwap = async (
-   tokenAAmount: number,
-   tokenBAmount: number,
+    tokenAAmount: number,
+    tokenBAmount: number
   ) => {
-
     const { seedPoolAccounts } = await setupPoolInitialization(
+      this.authority,
       this.tokenA,
       this.tokenB,
-      this.authority,
       tokenAAmount,
       tokenBAmount
     );

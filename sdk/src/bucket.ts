@@ -615,7 +615,7 @@ export class BucketClient extends AccountUtils {
     );
 
     // enable A->B and B->A swaps within the same pool. this can probably be isolated to its
-    // own saber util function.
+    // own saber util function. consider using input/output terminology instead of A/B.
     const reserveAndFeeATAs =
       rebalanceConfig.tokenA.toBase58() ===
       fetchedStableSwap.state.tokenA.mint.toBase58()
