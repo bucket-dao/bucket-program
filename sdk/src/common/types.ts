@@ -1,5 +1,8 @@
 import { u64 } from "@solana/spl-token";
-import { Keypair, PublicKey, TransactionInstruction } from "@solana/web3.js";
+import { Cluster, Keypair, PublicKey, TransactionInstruction } from "@solana/web3.js";
+import type { LOCALNET } from "./constant";
+
+export type ExtendedCluster = Cluster | typeof LOCALNET;
 
 export interface SwapAmount {
   amountIn: u64,

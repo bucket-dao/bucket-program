@@ -1,6 +1,6 @@
 use {
     crate::{
-        constant::{BUCKET_SEED, MAX_BASIS_POINTS, WITHDRAW_SEED},
+        constant::{BUCKET_SEED, MAX_BASIS_POINTS, WITHDRAW_SEED, MAX_SLIPPAGE_BPS},
         context::{Rebalance, RebalanceAsset},
         error::ErrorCode,
         math_error,
@@ -48,6 +48,12 @@ pub fn handle<'info>(
         amount_in,
         minimum_amount_out,
     )?;
+
+    msg!(
+        "computed swap values: in = {}, out = {}",
+        swap_amounts.amount_in,
+        swap_amounts.amount_out
+    );
 
     let bucket = ctx.accounts.bucket.key();
     let withdraw_authority_signer_seeds: &[&[&[u8]]] = &[&[
@@ -175,12 +181,6 @@ fn get_swap_amounts_for_caller<'info>(
             amount_out: requested_amount_out,
         })
     } else {
-        // (todo): store in config somewhere else? or accept dynamic percentage,
-        // while making sure that max slippage stays under some predefined threshold?
-        // this sttic value may lead to routine failed swaps depending on the pool &
-        // per-asset liquidity depth. revisit later.
-        let max_slippage_bps: u64 = 150; // 1.5%
-
         // we must scale token B's expected amount out based on token A's decimals.
         // otherwise, the difference in number of tokens received could be orders
         // of magnitude difference.
@@ -202,8 +202,8 @@ fn get_swap_amounts_for_caller<'info>(
         Ok(compute_exchange_amounts(
             scaled_amount,
             rebalance_asset.token_b.decimals,
-            max_slippage_bps,
-        )?)
+            MAX_SLIPPAGE_BPS,
+     )?)
     }
 }
 
@@ -230,7 +230,11 @@ fn compute_exchange_amounts<'info>(
     let amount_out = amount
         .checked_mul(slippage_factor)
         .ok_or_else(math_error!())?
-        .checked_div(decimals as u64)
+        .checked_div(
+            10_u64
+                .checked_pow(decimals as u32)
+                .ok_or_else(math_error!())?,
+        )
         .ok_or_else(math_error!())?;
 
     Ok(ExchangeAmount {

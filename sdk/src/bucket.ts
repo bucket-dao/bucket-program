@@ -1,6 +1,6 @@
 import * as anchor from "@project-serum/anchor";
 import { Program, Provider, Idl, Wallet } from "@project-serum/anchor";
-import { TOKEN_PROGRAM_ID, Token, u64 } from "@solana/spl-token";
+import { TOKEN_PROGRAM_ID, u64 } from "@solana/spl-token";
 import {
   AccountMeta,
   Connection,
@@ -8,7 +8,6 @@ import {
   TransactionInstruction,
   SystemProgram,
   PublicKey,
-  Cluster,
 } from "@solana/web3.js";
 import invariant from "tiny-invariant";
 import {
@@ -26,16 +25,17 @@ import {
   Collateral,
   CollateralAllocationResult,
   RebalanceConfig,
+  ExtendedCluster,
 } from "./common/types";
 import {
   addIxn,
   getSignersFromPayer,
   flattenValidInstructions,
   computeMappingFromList,
-  computeSwapAmounts
+  computeSwapAmounts,
 } from "./common/util";
 import { BucketProgram } from "./types/bucket_program";
-import { DEVNET } from "./common/constant";
+import { DEVNET, LOCALNET } from "./common/constant";
 
 export class BucketClient extends AccountUtils {
   wallet: Wallet;
@@ -51,7 +51,7 @@ export class BucketClient extends AccountUtils {
     conn: Connection,
     wallet: anchor.Wallet,
     idl?: Idl,
-    programId?: PublicKey,
+    programId?: PublicKey
   ) {
     super(conn);
     this.wallet = wallet;
@@ -60,7 +60,7 @@ export class BucketClient extends AccountUtils {
 
     // leakedKeypair is sometimes used for read-only operations
     this.readonlyKeypair = Keypair.generate();
-    
+
     this.saberProvider = new SaberRegistryProvider();
   }
 
@@ -113,7 +113,10 @@ export class BucketClient extends AccountUtils {
     bucket: PublicKey,
     programID: PublicKey = this.bucketProgram.programId
   ) => {
-    const [addr, bump] = await this.findProgramAddress(programID, ["issue", bucket]);
+    const [addr, bump] = await this.findProgramAddress(programID, [
+      "issue",
+      bucket,
+    ]);
 
     return {
       addr,
@@ -125,7 +128,10 @@ export class BucketClient extends AccountUtils {
     bucket: PublicKey,
     programID: PublicKey = this.bucketProgram.programId
   ) => {
-    const [addr, bump] = await this.findProgramAddress(programID, ["withdraw", bucket]);
+    const [addr, bump] = await this.findProgramAddress(programID, [
+      "withdraw",
+      bucket,
+    ]);
 
     return {
       addr,
@@ -230,7 +236,9 @@ export class BucketClient extends AccountUtils {
   ) => {
     const _mints = mints
       ? mints
-      : (await this.fetchBucket(bucket)).collateral.map(collateral => collateral.mint);
+      : (await this.fetchBucket(bucket)).collateral.map(
+          (collateral) => collateral.mint
+        );
     return this.fetchParsedTokenAccountsByMints(_mints, owner);
   };
 
@@ -252,11 +260,13 @@ export class BucketClient extends AccountUtils {
       }),
       supply: tokens
         .map((token) => token.amount.toNumber())
-        .reduce((a, b) => a + b)
+        .reduce((a, b) => a + b),
     };
   };
 
-  isAnyUnauthorizedCollateralTokensToRemove = async (reserve: PublicKey) => {
+  getUnauthorizedCollateralTokens = async (
+    reserve: PublicKey
+  ): Promise<ParsedTokenAccount[]> => {
     const [crate, _crateBump] = await generateCrateAddress(reserve);
     const { addr: bucketAddress } = await this.generateBucketAddress(crate);
     const { collateral } = await this.fetchBucket(bucketAddress);
@@ -266,9 +276,10 @@ export class BucketClient extends AccountUtils {
     const crateATAs = await this.fetchParsedTokenAccounts(crate);
     const _collateral = collateral.map((c) => c.mint.toBase58());
 
-    return (
-      crateATAs.filter((ata) => _collateral.includes(ata.mint.toBase58()))
-        .length > 0
+    // find any ATAs that aren't currently authorized collateral and have token
+    return crateATAs.filter(
+      (ata) =>
+        !_collateral.includes(ata.mint.toBase58()) && ata.amount.toNumber() > 0
     );
   };
 
@@ -427,12 +438,18 @@ export class BucketClient extends AccountUtils {
     mintToRemove: PublicKey,
     reserve: PublicKey,
     payer: PublicKey | Keypair,
-    cluster: Cluster = DEVNET,
+    cluster: ExtendedCluster = DEVNET,
     swapAccount?: PublicKey // allow localnet overrides
   ) => {
+    const signerInfo: SignerInfo = getSignersFromPayer(payer);
+
     const [crate, _crateBump] = await generateCrateAddress(reserve);
     const { addr: bucketAddress } = await this.generateBucketAddress(crate);
-    const { collateral } = await this.fetchBucket(bucketAddress);
+    const { bucket, collateral } = await this.fetchBucket(bucketAddress);
+
+    if (bucket.authority.toBase58() === signerInfo.payer.toBase58()) {
+      throw new Error("bucket authority should directly call rebalance");
+    }
 
     const _mintToRemove = mintToRemove.toBase58();
 
@@ -447,10 +464,12 @@ export class BucketClient extends AccountUtils {
       throw new Error(`${_mintToRemove} is an authorized mint`);
     }
 
-    const mintAmountToRemove = (
-      await this.fetchParsedTokenAccountsByMints([mintToRemove], crate)[0]
-    ).amount;
+    const tokenAccountToRemove = await this.fetchParsedTokenAccountsByMints(
+      [mintToRemove],
+      crate
+    );
 
+    const mintAmountToRemove = tokenAccountToRemove[0].amount.toNumber();
     const authorizedCollateralATAs =
       await this.fetchParsedTokenAccountsForAuthorizedCollateral(
         bucketAddress,
@@ -458,14 +477,8 @@ export class BucketClient extends AccountUtils {
         collateral.map((c) => c.mint)
       );
 
-    const reserveSupply = (
-      await new Token(
-        this.conn,
-        reserve,
-        this.bucketProgram.programId,
-        this.readonlyKeypair
-      ).getMintInfo()
-    ).supply.toNumber();
+    const reserveSupply = +(await this.conn.getTokenSupply(reserve)).value
+      .amount;
 
     const collateralMintToAllocation = computeMappingFromList<Collateral>(
       collateral,
@@ -526,8 +539,18 @@ export class BucketClient extends AccountUtils {
     rebalanceConfig: RebalanceConfig,
     reserve: PublicKey,
     payer: PublicKey | Keypair,
-    cluster: Cluster = DEVNET
+    cluster: ExtendedCluster = DEVNET
   ) => {
+    const _getSwapAccountFromMints = (cluster: ExtendedCluster) => {
+      if (cluster === LOCALNET)
+        throw new Error("Cannot lookup swap account via registry on localnet");
+      return this.saberProvider.getSwapAccountFromMints(
+        rebalanceConfig.tokenA,
+        rebalanceConfig.tokenB,
+        cluster
+      );
+    };
+
     const signerInfo: SignerInfo = getSignersFromPayer(payer);
 
     const [crate, _crateBump] = await generateCrateAddress(reserve);
@@ -537,11 +560,7 @@ export class BucketClient extends AccountUtils {
     // use he swap account for pool with mints A/B.
     const swapAccount = rebalanceConfig.swapAccount
       ? rebalanceConfig.swapAccount
-      : await this.saberProvider.getSwapAccountFromMints(
-          rebalanceConfig.tokenA,
-          rebalanceConfig.tokenB,
-          cluster
-        );
+      : await _getSwapAccountFromMints(cluster);
 
     const fetchedStableSwap = await StableSwap.load(
       this.provider.connection,
@@ -595,6 +614,22 @@ export class BucketClient extends AccountUtils {
       rebalanceConfig.maxSlippageBps
     );
 
+    // enable A->B and B->A swaps within the same pool. this can probably be isolated to its
+    // own saber util function. consider using input/output terminology instead of A/B.
+    const reserveAndFeeATAs =
+      rebalanceConfig.tokenA.toBase58() ===
+      fetchedStableSwap.state.tokenA.mint.toBase58()
+        ? {
+            inputAReserve: fetchedStableSwap.state.tokenA.reserve,
+            outputBReserve: fetchedStableSwap.state.tokenB.reserve,
+            outputBFees: fetchedStableSwap.state.tokenB.adminFeeAccount,
+          }
+        : {
+            inputAReserve: fetchedStableSwap.state.tokenB.reserve,
+            outputBReserve: fetchedStableSwap.state.tokenA.reserve,
+            outputBFees: fetchedStableSwap.state.tokenA.adminFeeAccount,
+          };
+
     // note: token A & B accounts are parsed off the remaining accounts
     return this.bucketProgram.rpc.rebalance(
       swapAmount.amountIn,
@@ -604,13 +639,12 @@ export class BucketClient extends AccountUtils {
           payer: signerInfo.payer,
           bucket,
           crateToken: crate,
-          withdrawAuthority: (await this.generateWithdrawAuthority(bucket)).addr,
+          withdrawAuthority: (await this.generateWithdrawAuthority(bucket))
+            .addr,
           swap: fetchedStableSwap.config.swapAccount,
           swapAuthority: fetchedStableSwap.config.authority,
           userAuthority: signerInfo.payer,
-          inputAReserve: fetchedStableSwap.state.tokenA.reserve,
-          outputBReserve: fetchedStableSwap.state.tokenB.reserve,
-          outputBFees: fetchedStableSwap.state.tokenB.adminFeeAccount,
+          ...reserveAndFeeATAs,
           poolMint: fetchedStableSwap.state.poolTokenMint,
           crateTokenProgram: CRATE_ADDRESSES.CrateToken,
           saberProgram: fetchedStableSwap.config.swapProgramID,
@@ -697,7 +731,7 @@ export class BucketClient extends AccountUtils {
     reserve: PublicKey,
     collateralTokens: PublicKey[],
     withdrawAuthority: PublicKey,
-    withdrawer: PublicKey | Keypair,
+    withdrawer: PublicKey | Keypair
   ) => {
     const signerInfo = getSignersFromPayer(withdrawer);
 
