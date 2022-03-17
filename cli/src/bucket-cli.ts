@@ -252,7 +252,7 @@ programCommand("deposit")
     log.info(
       `[${walletKeyPair.publicKey.toBase58()}] deposited ${amountU64.toNumber()} of collateral mint ${_collateral.toBase58()} to bucket ${bucket.toBase58()}`
     );
-    log.info(`[${p}]`);
+    log.info(`TX: [${p}]`);
     log.info("===========================================");
   });
 
