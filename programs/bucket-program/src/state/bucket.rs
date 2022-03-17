@@ -64,6 +64,8 @@ impl Bucket {
         // since we only loop through list of currently authorized mints, we ignore any additional mints.
         // error will be caught in the new allocation sum check.
         for mut collateral in self.collateral.iter_mut() {
+            msg!("updating collateral allocation: {}", collateral.mint);
+
             // match the current collateral to the collateral in the updated allocations vec
             let updated_collateral_allocation =
                 allocations[get_collateral_idx(&allocations, collateral.mint)?].allocation;
@@ -76,6 +78,8 @@ impl Bucket {
             // set the current collateral's updated allocation
             collateral.allocation = updated_collateral_allocation;
         }
+
+        msg!("running_updated_allocation: {}", running_updated_allocation);
 
         invariant!(
             running_updated_allocation == MAX_BASIS_POINTS,
