@@ -1,9 +1,7 @@
-use std::convert::TryInto;
-
 use {
     crate::{
         error::ErrorCode,
-        math::casting::{cast, cast_to_i64, cast_to_u128},
+        math::casting::{cast_to_i64, cast_to_u128},
         math_error,
     },
     anchor_lang::prelude::*,

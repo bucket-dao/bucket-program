@@ -1,6 +1,5 @@
 import { PublicKey } from "@solana/web3.js";
 import { expect } from "chai";
-import { BucketClient } from "../../sdk/src";
 
 export interface TokenBalance {
   mint: PublicKey;

@@ -39,57 +39,42 @@ pub fn get_oracle_price(
     precision: u32,
 ) -> Result<OraclePriceData, ErrorCode> {
 
-    let (sb_price, sb_twap, sb_confidence, sb_delay) = get_switchboard_price(switchboard_feed_info, clock_slot, precision)?;
+    let (price, twap, confidence, delay) = get_pyth_price(pyth_price_info, clock_slot, precision)?;
 
-    let sb_result = OraclePriceData {
-            price: sb_price,
-            twap: sb_twap,
-            confidence: sb_confidence,
-            delay: sb_delay
+    let pyth_result = OraclePriceData {
+        price,
+        twap,
+        confidence,
+        delay,
     };
 
-    require!(
-        is_oracle_valid(&sb_result)?,
-        ErrorCode::InvalidOracle
-    );
+    let is_pyth_oracle_valid = is_oracle_valid(&pyth_result)?;
 
-    Ok(sb_result)
-    // let (price, twap, confidence, delay) = get_pyth_price(pyth_price_info, clock_slot, precision)?;
+    if is_pyth_oracle_valid {
+        require!(
+            is_pyth_oracle_valid,
+            ErrorCode::InvalidOracle
+        );
 
-    // let pyth_result = OraclePriceData {
-    //     price,
-    //     twap,
-    //     confidence,
-    //     delay,
-    // };
+        Ok(pyth_result)
+    }
+    else {
+        let (sb_price, sb_twap, sb_confidence, sb_delay) = get_switchboard_price(switchboard_feed_info, clock_slot, precision)?;
 
-    // let is_pyth_oracle_valid = is_oracle_valid(&pyth_result)?;
+        let sb_result = OraclePriceData {
+                price: sb_price,
+                twap: sb_twap,
+                confidence: sb_confidence,
+                delay: sb_delay
+        };
 
-    // if is_pyth_oracle_valid {
-    //     require!(
-    //         is_pyth_oracle_valid,
-    //         ErrorCode::InvalidOracle
-    //     );
+        require!(
+            is_oracle_valid(&sb_result)?,
+            ErrorCode::InvalidOracle
+        );
 
-    //     Ok(pyth_result)
-    // }
-    // else {
-    //     let (sb_price, sb_twap, sb_confidence, sb_delay) = get_switchboard_price(switchboard_feed_info, clock_slot, precision)?;
-
-    //     let sb_result = OraclePriceData {
-    //             price: sb_price,
-    //             twap: sb_twap,
-    //             confidence: sb_confidence,
-    //             delay: sb_delay
-    //     };
-
-    //     require!(
-    //         is_oracle_valid(&sb_result)?,
-    //         ErrorCode::InvalidOracle
-    //     );
-
-    //     Ok(sb_result)
-    // }
+        Ok(sb_result)
+    }
 }
 
 pub fn is_oracle_valid(oracle_price_data: &OraclePriceData) -> Result<bool, ErrorCode> {

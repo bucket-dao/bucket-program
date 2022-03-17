@@ -216,43 +216,11 @@ programCommand("deposit")
     "Number of collateral tokens to deposit. Will not transform based on decimals."
   )
   .action(async (_, cmd) => {
-    const { env, mint, collateral, amount } = cmd.opts();
-
-    var from_b58 = function(
-        S,            //Base58 encoded string input
-        A             //Base58 characters (i.e. "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz")
-    ) {
-        var d = [],   //the array for storing the stream of decoded bytes
-            b = [],   //the result byte array that will be returned
-            i,        //the iterator variable for the base58 string
-            j,        //the iterator variable for the byte array (d)
-            c,        //the carry amount variable that is used to overflow from the current byte to the next byte
-            n;        //a temporary placeholder variable for the current byte
-        for(i in S) { //loop through each base58 character in the input string
-            j = 0,                             //reset the byte iterator
-            c = A.indexOf( S[i] );             //set the initial carry amount equal to the current base58 digit
-            if(c < 0)                          //see if the base58 digit lookup is invalid (-1)
-                return undefined;              //if invalid base58 digit, bail out and return undefined
-            c || b.length ^ i ? i : b.push(0); //prepend the result array with a zero if the base58 digit is zero and non-zero characters haven't been seen yet (to ensure correct decode length)
-            while(j in d || c) {               //start looping through the bytes until there are no more bytes and no carry amount
-                n = d[j];                      //set the placeholder for the current byte
-                n = n ? n * 58 + c : c;        //shift the current byte 58 units and add the carry amount (or just add the carry amount if this is a new byte)
-                c = n >> 8;                    //find the new carry amount (1-byte shift of current byte value)
-                d[j] = n % 256;                //reset the current byte to the remainder (the carry amount will pass on the overflow)
-                j++                            //iterate to the next byte
-            }
-        }
-        while(j--)               //since the byte array is backwards, loop through it in reverse order
-            b.push( d[j] );      //append each byte to the result
-        return new Uint8Array(b) //return the final byte array in Uint8Array format
-    }
+    const { keypair, env, mint, collateral, amount } = cmd.opts();
 
     const _mint = new PublicKey(mint);
     const _collateral = new PublicKey(collateral);
-    // "3kujziQaRg1K9pEqTmhE1PTUQcUaj3UtjFwRGrinGRx1rkNJRezUqJdEzFkweXhhLTBWcwzcCrWQurrH4f1Ps7NZ"
-    // Uint8Array.from(Array.from(text).map(letter => letter.charCodeAt(0)));
-    const walletKeyPair: Keypair = Keypair.fromSecretKey(Uint8Array.from(Array.from(from_b58("3kujziQaRg1K9pEqTmhE1PTUQcUaj3UtjFwRGrinGRx1rkNJRezUqJdEzFkweXhhLTBWcwzcCrWQurrH4f1Ps7NZ", "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"))));
-    // const walletKeyPair: Keypair = loadWalletKey(keypair);
+    const walletKeyPair: Keypair = loadWalletKey(keypair);
     const _client = createClient(env, walletKeyPair);
 
     const [crate, _bump] = await generateCrateAddress(_mint);
@@ -261,9 +229,7 @@ programCommand("deposit")
 
     // using devnet usdc oracle for now
     const pyth_usdc_devnet = new PublicKey(
-      // "5U3bH5b6XtG99aVWLqwVzYPVpQiFHytBD68Rz2eFPZd7"
-      // "C5wDxND9E61RZ1wZhaSTWkoA8udumaHnoQY6BBsiaVpn"
-      "3aR6kTksEFb2GsCHGBNtpvUpUJ1XzeA41RTnS4APD8oG"
+      "5SSkXsEKQepHHAewytPVwdej4epN1nxgLVM84L4KXgy7"
     );
 
     // Switchboard USDC Devnet

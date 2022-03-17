@@ -17,7 +17,6 @@ import {
   assertKeysEqual,
   isApproximatelyEqual,
 } from "./common/util";
-import { mockOracle } from "./common/testHelpers";
 import {
   setupPoolInitialization,
   FEES,
@@ -70,6 +69,16 @@ describe("bucket-program", () => {
   let stableSwap: StableSwap;
   let stableSwapAccount: Keypair;
   let stableSwapProgramId: PublicKey;
+
+  // Pyth USDC - Devnet
+  const pyth_usdc_devnet = new PublicKey(
+    "5SSkXsEKQepHHAewytPVwdej4epN1nxgLVM84L4KXgy7"
+  );
+
+  // Switchboard USDC - Devnet
+  const switchboard_usdc_devnet = new PublicKey(
+    "BjUgj6YCnFBZ49wF54ddBVA9qu8TeqkFtkbqmZcee8uW"
+  );
 
   before("Create funded user accounts", async () => {
     authority = await nodeWallet.createFundedWallet(1 * LAMPORTS_PER_SOL);
@@ -212,7 +221,7 @@ describe("bucket-program", () => {
         name: "StableSwap LP",
         address: initializeArgs.poolTokenMint.toString(),
         decimals: 6,
-        chainId: 100,
+        chainId: 103,
       }),
       tokens: [
         new SToken({
@@ -220,14 +229,14 @@ describe("bucket-program", () => {
           name: "Token A",
           address: initializeArgs.tokenA.mint.toString(),
           decimals: 6,
-          chainId: 100,
+          chainId: 103,
         }),
         new SToken({
           symbol: "TOKB",
           name: "Token B",
           address: initializeArgs.tokenB.mint.toString(),
           decimals: 6,
-          chainId: 100,
+          chainId: 103,
         }),
       ],
     };
@@ -316,7 +325,6 @@ describe("bucket-program", () => {
   });
 
   it("User attempts to deposit unauthorized collateral", async () => {
-    const oracle = await mockOracle(1);
     const depositAmount = new u64(1_000_000);
     expectThrowsAsync(() =>
       client.deposit(
@@ -325,8 +333,8 @@ describe("bucket-program", () => {
         collateralA.publicKey,
         issueAuthority,
         userA,
-        oracle,
-        oracle // Want separate oracles here
+        pyth_usdc_devnet,
+        switchboard_usdc_devnet
       )
     );
   });
@@ -488,9 +496,6 @@ describe("bucket-program", () => {
     // mint collateral and fund depositor ATA with collateral
     const depositAmount = new u64(1_000_000);
 
-    const oracle = await mockOracle(1);
-    console.log("MOCK ORACLE: ", oracle);
-
     // fetch depositor ATA balance before deposit
     const depositorCollateralBefore = await client.fetchTokenBalance(
       collateralA.publicKey,
@@ -505,8 +510,8 @@ describe("bucket-program", () => {
       collateralA.publicKey,
       issueAuthority,
       userA,
-      oracle,
-      oracle // Want separate oracles here
+      pyth_usdc_devnet,
+      switchboard_usdc_devnet
     );
 
     // fetch depositor & crate ATA balances after deposit
@@ -539,7 +544,6 @@ describe("bucket-program", () => {
   it("User B, C deposits authorized collateral B, C, issue reserve tokens", async () => {
     // mint collateral and fund depositor ATA with collateral
     const depositAmount = new u64(1_000_000);
-    const oracle = await mockOracle(1);
 
     // ==================================================================
     // collateral B checks & rpc call
@@ -559,8 +563,8 @@ describe("bucket-program", () => {
       collateralB.publicKey,
       issueAuthority,
       userB,
-      oracle,
-      oracle // Want separate oracles here
+      pyth_usdc_devnet,
+      switchboard_usdc_devnet
     );
 
     // fetch user B & crate ATA balances for collateral B after deposit
@@ -602,8 +606,8 @@ describe("bucket-program", () => {
       collateralC.publicKey,
       issueAuthority,
       userC,
-      oracle,
-      oracle // Want separate oracles here
+      pyth_usdc_devnet,
+      switchboard_usdc_devnet
     );
 
     // fetch user B & crate ATA balances for collateral B after deposit
@@ -635,7 +639,6 @@ describe("bucket-program", () => {
     // of tokens, e.g. 1 collateral for 1000 reserve, or 1000 collateral for 1 reserve.
 
     const depositAmountD = new u64(1);
-    const oracle = await mockOracle(1);
 
     // ==================================================================
     // collateral D checks & rpc call
@@ -659,8 +662,8 @@ describe("bucket-program", () => {
       collateralD.publicKey,
       issueAuthority,
       userB,
-      oracle,
-      oracle // Want separate oracles here
+      pyth_usdc_devnet,
+      switchboard_usdc_devnet
     );
 
     // fetch user B & crate ATA balances for collateral D after deposit
@@ -705,8 +708,8 @@ describe("bucket-program", () => {
       collateralE.publicKey,
       issueAuthority,
       userC,
-      oracle,
-      oracle // Want separate oracles here
+      pyth_usdc_devnet,
+      switchboard_usdc_devnet
     );
 
     // fetch user B & crate ATA balances for collateral E after deposit
