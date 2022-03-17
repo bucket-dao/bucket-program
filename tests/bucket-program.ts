@@ -325,7 +325,8 @@ describe("bucket-program", () => {
         collateralA.publicKey,
         issueAuthority,
         userA,
-        oracle
+        oracle,
+        oracle // Want separate oracles here
       )
     );
   });
@@ -504,7 +505,8 @@ describe("bucket-program", () => {
       collateralA.publicKey,
       issueAuthority,
       userA,
-      oracle
+      oracle,
+      oracle // Want separate oracles here
     );
 
     // fetch depositor & crate ATA balances after deposit
@@ -557,7 +559,8 @@ describe("bucket-program", () => {
       collateralB.publicKey,
       issueAuthority,
       userB,
-      oracle
+      oracle,
+      oracle // Want separate oracles here
     );
 
     // fetch user B & crate ATA balances for collateral B after deposit
@@ -599,7 +602,8 @@ describe("bucket-program", () => {
       collateralC.publicKey,
       issueAuthority,
       userC,
-      oracle
+      oracle,
+      oracle // Want separate oracles here
     );
 
     // fetch user B & crate ATA balances for collateral B after deposit
@@ -655,7 +659,8 @@ describe("bucket-program", () => {
       collateralD.publicKey,
       issueAuthority,
       userB,
-      oracle
+      oracle,
+      oracle // Want separate oracles here
     );
 
     // fetch user B & crate ATA balances for collateral D after deposit
@@ -700,7 +705,8 @@ describe("bucket-program", () => {
       collateralE.publicKey,
       issueAuthority,
       userC,
-      oracle
+      oracle,
+      oracle // Want separate oracles here
     );
 
     // fetch user B & crate ATA balances for collateral E after deposit

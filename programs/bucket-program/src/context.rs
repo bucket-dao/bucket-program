@@ -244,7 +244,10 @@ pub struct Deposit<'info> {
     pub depositor_reserve: Box<Account<'info, TokenAccount>>,
 
     /// CHECK: required for CPI into pyth
-    pub oracle: AccountInfo<'info>,
+    pub pyth_price_info: AccountInfo<'info>,
+
+    /// CHECK: Use VRF from Switchboard
+    pub switchboard_feed_info: AccountInfo<'info>,
 }
 
 #[derive(Accounts)]

@@ -336,7 +336,12 @@ export type BucketProgram = {
           "isSigner": false
         },
         {
-          "name": "oracle",
+          "name": "pythPriceInfo",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "switchboardFeedInfo",
           "isMut": false,
           "isSigner": false
         }
@@ -532,20 +537,9 @@ export type BucketProgram = {
           },
           {
             "name": "InvalidOracle"
-          }
-        ]
-      }
-    },
-    {
-      "name": "OracleSource",
-      "type": {
-        "kind": "enum",
-        "variants": [
-          {
-            "name": "Pyth"
           },
           {
-            "name": "Switchboard"
+            "name": "InvalidAggregatorRound"
           }
         ]
       }
@@ -597,6 +591,20 @@ export type BucketProgram = {
           },
           {
             "name": "Volatility"
+          }
+        ]
+      }
+    },
+    {
+      "name": "OracleSource",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Pyth"
+          },
+          {
+            "name": "Switchboard"
           }
         ]
       }
@@ -942,7 +950,12 @@ export const IDL: BucketProgram = {
           "isSigner": false
         },
         {
-          "name": "oracle",
+          "name": "pythPriceInfo",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "switchboardFeedInfo",
           "isMut": false,
           "isSigner": false
         }
@@ -1138,20 +1151,9 @@ export const IDL: BucketProgram = {
           },
           {
             "name": "InvalidOracle"
-          }
-        ]
-      }
-    },
-    {
-      "name": "OracleSource",
-      "type": {
-        "kind": "enum",
-        "variants": [
-          {
-            "name": "Pyth"
           },
           {
-            "name": "Switchboard"
+            "name": "InvalidAggregatorRound"
           }
         ]
       }
@@ -1203,6 +1205,20 @@ export const IDL: BucketProgram = {
           },
           {
             "name": "Volatility"
+          }
+        ]
+      }
+    },
+    {
+      "name": "OracleSource",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Pyth"
+          },
+          {
+            "name": "Switchboard"
           }
         ]
       }

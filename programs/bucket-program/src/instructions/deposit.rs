@@ -28,8 +28,8 @@ pub fn handle(ctx: Context<Deposit>, deposit_amount: u64) -> ProgramResult {
     // todo: verify oracle address. couple possible approaches. easiest could be a PDA-per-mint
     // with the pyth and switchboard oracle price feed addresses. regardless of approach, this
     // is a major attack vector we need to account for.
-    let oracle_price_data: OraclePriceData =
-        get_oracle_price(&ctx.accounts.oracle, clock.slot, TARGET_ORACLE_PRECISION)?;
+    let oracle_price_data: OraclePriceData = 
+        get_oracle_price(&ctx.accounts.pyth_price_info, &ctx.accounts.switchboard_feed_info, clock.slot, TARGET_ORACLE_PRECISION)?;
 
     let price_per_coin = oracle_price_data.price;
     let price_per_bucket_usd = 1;

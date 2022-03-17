@@ -28,6 +28,8 @@ pub enum ErrorCode {
     CastingFailure,
     #[msg("Oracle Values are invalid")]
     InvalidOracle,
+    #[msg("Aggregator is not currently populated with a valid round.")]
+    InvalidAggregatorRound,
 }
 
 

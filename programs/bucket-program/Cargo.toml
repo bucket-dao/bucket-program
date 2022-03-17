@@ -24,3 +24,4 @@ vipers = "1.5.9"
 pyth-client = {version = "0.5.0", features = ["no-entrypoint"]}
 bytemuck = "1.4.0"
 stable-swap-anchor = "1.6.8"
+switchboard-v2 = "0.1.8"
