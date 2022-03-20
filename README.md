@@ -2,7 +2,7 @@
 
 <div>
     <div align="center">
-        <img src="/assets/banner.png" />
+        <img src="./assets/banner.png" />
     </div>
     <span>
         Background courtesy of <a href="https://unsplash.com/@7henrique1993">Henrique Malaguti</a> on <a href="https://unsplash.com">Unsplash</a>
@@ -15,8 +15,18 @@ Bucket aims to be a composable stablecoin by aggregating a diversified pool of s
 
 The team started this project at [mtnDAO](https://twitter.com/mtnDAO) for [Solana's Riptide Hackathon](https://solana.com/riptide). We are in active development. For the latest updates, follow our journey:
 
-- Website: https://bucketdao.com
-- Twitter: https://twitter.com/bucket_sol
+- [Website](https://bucketdao.com)
+- [Twitter](https://twitter.com/bucket_sol)
+- [Litepaper](https://docs.google.com/document/d/1_GOjncQYXdtBtDilnhC1_wZllG9nEKJgOS7xX4IV2H4/)
+
+<div>
+    <div align="center">
+        <img src="./assets/onchain_diagram.png" />
+    </div>
+    <span>
+        Diagram of on-chain architecture.
+    </span>
+</div>
 
 ## Respository overview
 
