@@ -9,6 +9,14 @@
     </span>
 </div>
 
+<br />
+
+**Note on Switchboard Integration:** The Switchboard integration is currently implemented in a [separate, non-main branch](https://github.com/bucket-dao/bucket-program/tree/switchboard) because we don't have a client to enable local testing.
+
+We decided to keep a separate the integration in a separate branch since merging would cause tests to fail on localnet. However, we did test the integration on a deployed devnet program.
+
+Moreover, the PR to merge Switchboard to main is [here](https://github.com/bucket-dao/bucket-program/pull/19).
+
 ## Description
 
 Bucket aims to be a composable stablecoin by aggregating a diversified pool of stablecoins to increase decentralization and decrease single points of failure. In a world of abundant stablecoins, bucket strives to provide value in 2 ways: protocol-to-bucket and consumer-to-bucket. For a more in depth description, please visit our [website](https://bucketdao.com). Bucket builds on top of a variety open source programs in the Solana ecosystem: [Crate Protocol](https://github.com/CrateProtocol/crate), [Saber's stable swap](https://github.com/saber-hq/stable-swap), and more.
@@ -63,14 +71,15 @@ These rust crates are produced by running anchor build.
 
 These rust crates are imported across this repo's programs' Cargo.toml files. Disclaimer: our programs do not necessarily the latest versions, as displayed in the table below. Check the Cargo.toml or Cargo.lock for specific crate versions.
 
-| Package              | Description                                                       | Version                                                                                                         | Docs                                                                                           |
-| :------------------- | :---------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------- |
-| `anchor-spl`         | CPI clients for SPL programs                                      | [![Crates.io](https://img.shields.io/crates/v/anchor-spl)](https://crates.io/crates/anchor-spl)                 | [![Docs.rs](https://docs.rs/anchor-spl/badge.svg)](https://docs.rs/anchor-spl)                 |
-| `anchor-lang`        | Solana Sealevel eDSL                                              | [![Crates.io](https://img.shields.io/crates/v/anchor-lang)](https://crates.io/crates/anchor-lang)               | [![Docs.rs](https://docs.rs/anchor-lang/badge.svg)](https://docs.rs/anchor-lang)               |
-| `stable-swap-anchor` | Anchor bindings for the StableSwap Rust client                    | [![Crates.io](https://img.shields.io/crates/v/stable-swap-anchor)](https://crates.io/crates/stable-swap-anchor) | [![Docs.rs](https://docs.rs/stable-swap-anchor/badge.svg)](https://docs.rs/stable-swap-anchor) |
-| `crate-token`        | Fractional ownership of a basket of assets                        | [![Crates.io](https://img.shields.io/crates/v/crate-token)](https://crates.io/crates/crate-token)               | [![Docs.rs](https://docs.rs/crate-token/badge.svg)](https://docs.rs/crate-token)               |
-| `vipers`             | Assorted checks and validations for writing safer Solana programs | [![Crates.io](https://img.shields.io/crates/v/vipers)](https://crates.io/crates/vipers)                         | [![Docs.rs](https://docs.rs/vipers/badge.svg)](https://docs.rs/vipers)                         |
-| `pyth-client`        | Pyth price oracle data structures and example usage               | [![crates](https://img.shields.io/crates/v/pyth-client)](https://crates.io/crates/pyth-client)                  | [![Docs.rs](https://docs.rs/pyth-client/badge.svg)](https://docs.rs/pyth-client)               |
+| Package              | Description                                                         | Version                                                                                                         | Docs                                                                                           |
+| :------------------- | :------------------------------------------------------------------ | :-------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------- |
+| `anchor-spl`         | CPI clients for SPL programs                                        | [![Crates.io](https://img.shields.io/crates/v/anchor-spl)](https://crates.io/crates/anchor-spl)                 | [![Docs.rs](https://docs.rs/anchor-spl/badge.svg)](https://docs.rs/anchor-spl)                 |
+| `anchor-lang`        | Solana Sealevel eDSL                                                | [![Crates.io](https://img.shields.io/crates/v/anchor-lang)](https://crates.io/crates/anchor-lang)               | [![Docs.rs](https://docs.rs/anchor-lang/badge.svg)](https://docs.rs/anchor-lang)               |
+| `stable-swap-anchor` | Anchor bindings for the StableSwap Rust client                      | [![Crates.io](https://img.shields.io/crates/v/stable-swap-anchor)](https://crates.io/crates/stable-swap-anchor) | [![Docs.rs](https://docs.rs/stable-swap-anchor/badge.svg)](https://docs.rs/stable-swap-anchor) |
+| `crate-token`        | Fractional ownership of a basket of assets                          | [![Crates.io](https://img.shields.io/crates/v/crate-token)](https://crates.io/crates/crate-token)               | [![Docs.rs](https://docs.rs/crate-token/badge.svg)](https://docs.rs/crate-token)               |
+| `vipers`             | Assorted checks and validations for writing safer Solana programs   | [![Crates.io](https://img.shields.io/crates/v/vipers)](https://crates.io/crates/vipers)                         | [![Docs.rs](https://docs.rs/vipers/badge.svg)](https://docs.rs/vipers)                         |
+| `pyth-client`        | Pyth price oracle data structures and example usage                 | [![crates](https://img.shields.io/crates/v/pyth-client)](https://crates.io/crates/pyth-client)                  | [![Docs.rs](https://docs.rs/pyth-client/badge.svg)](https://docs.rs/pyth-client)               |
+| `switchboard-v2`     | A Rust library to interact with Switchboard V2's hosted data feeds. | [![crates](https://img.shields.io/crates/v/pyth-client)](https://crates.io/crates/switchboard-v2)               | [![Docs.rs](https://docs.rs/switchboard-v2/badge.svg)](https://docs.rs/switchboard-v2)         |
 
 ## JavaScript/Web3.js
 
@@ -130,4 +139,4 @@ anchor test
 
 ## Licensing
 
-[Apache 2.0](./LICENSE).
+[AGPL 3.0](./LICENSE).
