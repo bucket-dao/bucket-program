@@ -245,7 +245,6 @@ pub struct Deposit<'info> {
     /// CHECK: required for CPI into pyth
     pub pyth_price_info: AccountInfo<'info>,
 
-    /// CHECK: Use VRF from Switchboard
     pub switchboard_feed_info: AccountInfo<'info>,
 }
 

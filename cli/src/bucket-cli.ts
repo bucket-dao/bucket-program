@@ -238,7 +238,7 @@ programCommand("deposit")
     );
 
     const amountU64 = new u64(amount);
-    let p = await _client.deposit(
+    const transaction = await _client.deposit(
       amountU64,
       _mint,
       _collateral,
@@ -252,7 +252,7 @@ programCommand("deposit")
     log.info(
       `[${walletKeyPair.publicKey.toBase58()}] deposited ${amountU64.toNumber()} of collateral mint ${_collateral.toBase58()} to bucket ${bucket.toBase58()}`
     );
-    log.info(`TX: [${p}]`);
+    log.info(`TX: [${transaction}]`);
     log.info("===========================================");
   });
 

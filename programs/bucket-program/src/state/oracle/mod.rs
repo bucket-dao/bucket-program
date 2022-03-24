@@ -1,3 +1,5 @@
+// Thank you Drift Protocol: https://github.com/drift-labs/protocol-v1/blob/master/programs/clearing_house/src/state/market.rs
+
 pub mod pyth;
 pub mod switchboard;
 
