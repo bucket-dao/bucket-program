@@ -45,6 +45,7 @@ pub fn get_oracle_price(
     clock_slot: u64,
     target_precision: u32,
 ) -> Result<OraclePriceData, ErrorCode> {
+    msg!("Reading default oracle.");
     let result = match OracleSource::default() {
         OracleSource::Pyth => pyth::get_price(pyth_oracle, clock_slot, target_precision),
         OracleSource::Switchboard => {
@@ -61,6 +62,7 @@ pub fn get_oracle_price(
         Ok(result)
     }
     else {
+        msg!("Default oracle is invalid. Reading backup oracle.");
         let backup_result = match OracleSource::backup() {
             OracleSource::Pyth => pyth::get_price(pyth_oracle, clock_slot, target_precision),
             OracleSource::Switchboard => {
@@ -106,15 +108,22 @@ pub fn is_oracle_valid(
         has_sufficient_number_of_data_points,
     } = *oracle_price_data;
 
-    let is_oracle_price_nonpositive =
-        (price <= 750000) && ((twap.is_some() && twap.unwrap() <= 0) || twap.is_none());
+    let is_oracle_price_nonpositive = match twap {
+        Some(_twap) => _twap <= 0,
+        None => false
+    } || price <= 0;
 
     let is_conf_too_large = confidence.gt(&MAX_ORACLE_CONF);
 
     let is_stale = delay.gt(&SLOTS_BEFORE_STALE);
 
+    msg!("Is Oracle Price Nonpositive: {} (val: {})", is_oracle_price_nonpositive, price);
+    msg!("Is Conf Too Large: {} (val: {})", is_conf_too_large, confidence);
+    msg!("Is Stale: {} (val: {})", is_stale, delay);
+    msg!("Has Sufficient Number of Data Points: {}", has_sufficient_number_of_data_points);
+
     Ok(
         !(is_stale || is_conf_too_large || is_oracle_price_nonpositive)
-            && has_sufficient_number_of_data_points,
+            && has_sufficient_number_of_data_points
     )
 }

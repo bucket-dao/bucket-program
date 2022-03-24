@@ -136,6 +136,8 @@ pub fn get_price(
     clock_slot: u64,
     target_precision: u32
 ) -> Result<OraclePriceData, ErrorCode> {
+    msg!("Using Pyth");
+    
     let price_data = Price::load(&price_oracle).unwrap();
 
     let oracle_price = cast_to_i128(price_data.agg.price)?;

@@ -19,6 +19,8 @@ pub fn get_price(
     clock_slot: u64,
     target_precision: u32,
 ) -> Result<OraclePriceData, ErrorCode> {
+    msg!("Using Switchboard");
+    
     let aggregator_data =
         AggregatorAccountData::new(switchboard_feed_info).or(Err(ErrorCode::UnableToLoadOracle))?;
 
