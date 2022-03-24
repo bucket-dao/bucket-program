@@ -245,6 +245,7 @@ pub struct Deposit<'info> {
     /// CHECK: required for CPI into pyth
     pub pyth_price_info: AccountInfo<'info>,
 
+    /// CHECK: required for anchor to build - not sure what's needed
     pub switchboard_feed_info: AccountInfo<'info>,
 }
 

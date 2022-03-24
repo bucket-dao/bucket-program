@@ -7,8 +7,8 @@ import {
   TokenBalance,
   isApproximatelyEqual
 } from "./common/util";
-import { mockOracle } from "./helpers/pyth/index"
 import { BucketClient, executeTx, NodeWallet } from "../sdk/dist/cjs";
+import { mockOracle } from "./helpers/pyth";
 
 describe("deposit-redeem-flow", () => {
   const _provider = anchor.Provider.env();
@@ -36,12 +36,14 @@ describe("deposit-redeem-flow", () => {
 
   let userA: Keypair;
 
-  let pythUSDC: PublicKey;
-  let switchboardUSDC: PublicKey;
+  // Devnet Pyth USDC: "5SSkXsEKQepHHAewytPVwdej4epN1nxgLVM84L4KXgy7"
+  let pythOracle: PublicKey;
+  // Devnet Switchboard USDC: "BjUgj6YCnFBZ49wF54ddBVA9qu8TeqkFtkbqmZcee8uW"
+  let switchboardOracle: PublicKey;
 
-  before("Create mock oracles", async () => {
-    pythUSDC = await mockOracle(100 * 10e6, -6);
-    switchboardUSDC = await mockOracle(100 * 10e6, -6);
+  before("Create Oracles", async () => {
+    pythOracle = await mockOracle(1);
+    switchboardOracle = await mockOracle(1);
   });
 
   before("Create funded user accounts", async () => {
@@ -145,8 +147,8 @@ describe("deposit-redeem-flow", () => {
         collateralA.publicKey,
         issueAuthority,
         userA,
-        pythUSDC,
-        switchboardUSDC
+        pythOracle,
+        switchboardOracle
       )
     );
   });
@@ -240,8 +242,8 @@ describe("deposit-redeem-flow", () => {
       collateralA.publicKey,
       issueAuthority,
       userA,
-      pythUSDC,
-      switchboardUSDC
+      pythOracle,
+      switchboardOracle
     );
 
     // fetch depositor & crate ATA balances after deposit
@@ -293,8 +295,8 @@ describe("deposit-redeem-flow", () => {
       collateralB.publicKey,
       issueAuthority,
       userA,
-      pythUSDC,
-      switchboardUSDC
+      pythOracle,
+      switchboardOracle
     );
 
     // fetch user B & crate ATA balances for collateral B after deposit
@@ -338,8 +340,8 @@ describe("deposit-redeem-flow", () => {
       collateralC.publicKey,
       issueAuthority,
       userA,
-      pythUSDC,
-      switchboardUSDC
+      pythOracle,
+      switchboardOracle
     );
 
     // fetch user B & crate ATA balances for collateral B after deposit
@@ -437,7 +439,8 @@ describe("deposit-redeem-flow", () => {
       console.log(`shareOfRedeem => ${shareOfRedeem}`);
 
       console.log(
-        `[BEFORE] user A ${collateralPublicKey.toBase58()} ATA => ${tokenBalances[collateralPublicKey.toBase58()].before
+        `[BEFORE] user A ${collateralPublicKey.toBase58()} ATA => ${
+          tokenBalances[collateralPublicKey.toBase58()].before
         }`
       );
       console.log(
@@ -454,7 +457,8 @@ describe("deposit-redeem-flow", () => {
         tokenBalances[collateralPublicKey.toBase58()].before + shareOfRedeem
       );
       console.log(
-        `before user A mint ${collateralPublicKey.toBase58()} => ${tokenBalances[collateralPublicKey.toBase58()].before
+        `before user A mint ${collateralPublicKey.toBase58()} => ${
+          tokenBalances[collateralPublicKey.toBase58()].before
         }`
       );
       console.log(

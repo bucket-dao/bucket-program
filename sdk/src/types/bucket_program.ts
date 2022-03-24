@@ -537,9 +537,6 @@ export type BucketProgram = {
           },
           {
             "name": "InvalidOracle"
-          },
-          {
-            "name": "InvalidAggregatorRound"
           }
         ]
       }
@@ -1151,9 +1148,6 @@ export const IDL: BucketProgram = {
           },
           {
             "name": "InvalidOracle"
-          },
-          {
-            "name": "InvalidAggregatorRound"
           }
         ]
       }
