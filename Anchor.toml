@@ -1,11 +1,11 @@
-[programs.devnet]
+[programs.localnet]
 bucket_program = "AfSyq2iZCnwLygroJ33aNYh3FB8RTqnfuHJew8kM7aik"
 
 [registry]
 url = "https://anchor.projectserum.com"
 
 [provider]
-cluster = "devnet"
+cluster = "localnet"
 wallet = "./tests/bucket_dao.json"
 
 [scripts]

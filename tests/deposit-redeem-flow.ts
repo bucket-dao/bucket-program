@@ -5,8 +5,9 @@ import { expect } from "chai";
 import {
   expectThrowsAsync,
   TokenBalance,
-  isApproximatelyEqual,
+  isApproximatelyEqual
 } from "./common/util";
+import { mockOracle } from "./helpers/pyth/index"
 import { BucketClient, executeTx, NodeWallet } from "../sdk/dist/cjs";
 
 describe("deposit-redeem-flow", () => {
@@ -35,15 +36,13 @@ describe("deposit-redeem-flow", () => {
 
   let userA: Keypair;
 
-  // Pyth USDC - Devnet
-  const pyth_usdc_devnet = new PublicKey(
-    "5SSkXsEKQepHHAewytPVwdej4epN1nxgLVM84L4KXgy7"
-  );
+  let pythUSDC: PublicKey;
+  let switchboardUSDC: PublicKey;
 
-  // Switchboard USDC - Devnet
-  const switchboard_usdc_devnet = new PublicKey(
-    "BjUgj6YCnFBZ49wF54ddBVA9qu8TeqkFtkbqmZcee8uW"
-  );
+  before("Create mock oracles", async () => {
+    pythUSDC = await mockOracle(100 * 10e6, -6);
+    switchboardUSDC = await mockOracle(100 * 10e6, -6);
+  });
 
   before("Create funded user accounts", async () => {
     authority = await nodeWallet.createFundedWallet(10 * LAMPORTS_PER_SOL);
@@ -146,8 +145,8 @@ describe("deposit-redeem-flow", () => {
         collateralA.publicKey,
         issueAuthority,
         userA,
-        pyth_usdc_devnet,
-        switchboard_usdc_devnet
+        pythUSDC,
+        switchboardUSDC
       )
     );
   });
@@ -241,8 +240,8 @@ describe("deposit-redeem-flow", () => {
       collateralA.publicKey,
       issueAuthority,
       userA,
-      pyth_usdc_devnet,
-      switchboard_usdc_devnet
+      pythUSDC,
+      switchboardUSDC
     );
 
     // fetch depositor & crate ATA balances after deposit
@@ -294,8 +293,8 @@ describe("deposit-redeem-flow", () => {
       collateralB.publicKey,
       issueAuthority,
       userA,
-      pyth_usdc_devnet,
-      switchboard_usdc_devnet
+      pythUSDC,
+      switchboardUSDC
     );
 
     // fetch user B & crate ATA balances for collateral B after deposit
@@ -339,8 +338,8 @@ describe("deposit-redeem-flow", () => {
       collateralC.publicKey,
       issueAuthority,
       userA,
-      pyth_usdc_devnet,
-      switchboard_usdc_devnet
+      pythUSDC,
+      switchboardUSDC
     );
 
     // fetch user B & crate ATA balances for collateral B after deposit
@@ -438,8 +437,7 @@ describe("deposit-redeem-flow", () => {
       console.log(`shareOfRedeem => ${shareOfRedeem}`);
 
       console.log(
-        `[BEFORE] user A ${collateralPublicKey.toBase58()} ATA => ${
-          tokenBalances[collateralPublicKey.toBase58()].before
+        `[BEFORE] user A ${collateralPublicKey.toBase58()} ATA => ${tokenBalances[collateralPublicKey.toBase58()].before
         }`
       );
       console.log(
@@ -456,8 +454,7 @@ describe("deposit-redeem-flow", () => {
         tokenBalances[collateralPublicKey.toBase58()].before + shareOfRedeem
       );
       console.log(
-        `before user A mint ${collateralPublicKey.toBase58()} => ${
-          tokenBalances[collateralPublicKey.toBase58()].before
+        `before user A mint ${collateralPublicKey.toBase58()} => ${tokenBalances[collateralPublicKey.toBase58()].before
         }`
       );
       console.log(
