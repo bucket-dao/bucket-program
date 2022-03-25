@@ -41,6 +41,22 @@ export type Pyth = {
           "type": "i64"
         }
       ]
+    },
+    {
+      "name": "setTwap",
+      "accounts": [
+        {
+          "name": "price",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "twap",
+          "type": "i64"
+        }
+      ]
     }
   ],
   "types": [
@@ -138,6 +154,22 @@ export const IDL: Pyth = {
       "args": [
         {
           "name": "price",
+          "type": "i64"
+        }
+      ]
+    },
+    {
+      "name": "setTwap",
+      "accounts": [
+        {
+          "name": "price",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "twap",
           "type": "i64"
         }
       ]

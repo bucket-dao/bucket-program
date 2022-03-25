@@ -1,15 +1,21 @@
-// https://github.com/zetamarkets/fuze/blob/master/vault/programs/vault/src/pyth_client.rs
+// Thank you Drift Protocol: https://github.com/drift-labs/protocol-v1/blob/master/programs/clearing_house/src/state/market.rs
+
+use super::OraclePriceData;
+
 use {
     crate::{
         error::ErrorCode,
         math::casting::{cast, cast_to_i128, cast_to_i64, cast_to_u128},
         math_error,
     },
-    anchor_lang::prelude::*,
-    bytemuck::{cast_slice_mut, from_bytes_mut, try_cast_slice_mut, Pod, Zeroable},
-    std::cell::RefMut,
-    std::convert::TryInto,
+    anchor_lang::prelude::*
 };
+
+use anchor_lang::prelude::AccountInfo;
+use bytemuck::{cast_slice_mut, from_bytes_mut, try_cast_slice_mut, Pod, Zeroable};
+use std::cell::RefMut;
+
+use anchor_lang::solana_program::msg;
 
 #[derive(Default, Copy, Clone)]
 #[repr(C)]
@@ -33,7 +39,6 @@ impl Default for PriceStatus {
     }
 }
 
-// what is this??
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub enum CorpAction {
@@ -65,7 +70,7 @@ pub struct PriceComp {
 
 #[derive(Copy, Clone)]
 #[repr(C)]
-#[allow(dead_code)]
+#[allow(dead_code, clippy::upper_case_acronyms)]
 pub enum PriceType {
     Unknown,
     Price,
@@ -79,43 +84,20 @@ impl Default for PriceType {
     }
 }
 
-// https://github.com/pyth-network/pyth-client-rs/blob/210087a7b536931be701161144822ce027a186d9/src/lib.rs#L184
-/// An exponentially-weighted moving average.
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct Ema {
-    /// The current value of the EMA
-    pub val: i64,
-    /// numerator state for next update
-    pub numer: i64,
-    /// denominator state for next update
-    pub denom: i64,
-}
-
-/// Price accounts represent a continuously-updating price feed for a product.
-#[derive(Copy, Clone)]
+#[derive(Default, Copy, Clone)]
 #[repr(C)]
 pub struct Price {
-    pub magic: u32, // Pyth magic number.
-    pub ver: u32,   // Program version.
-    /// Account type.
-    pub atype: u32,
-    /// Price account size.
-    pub size: u32,
-    /// Price or calculation type
-    pub ptype: PriceType,
-    /// Price exponent.
-    pub expo: i32,
-    /// Number of component prices.
-    pub num: u32,
-    /// Currently accumulating price slot.
+    pub magic: u32,       // Pyth magic number.
+    pub ver: u32,         // Program version.
+    pub atype: u32,       // Account type.
+    pub size: u32,        // Price account size.
+    pub ptype: PriceType, // Price or calculation type.
+    pub expo: i32,        // Price exponent.
+    pub num: u32,         // Number of component prices.
     pub unused: u32,
-    /// Valid slot-time of agg. price.
-    pub curr_slot: u64,
-    /// valid slot-time of agg. price
-    pub valid_slot: u64,
-    /// time-weighted average price
-    pub twap: i64,
+    pub curr_slot: u64,        // Currently accumulating price slot.
+    pub valid_slot: u64,       // Valid slot-time of agg. price.
+    pub twap: i64,             // Time-weighted average price.
     pub avol: u64,             // Annualized price volatility.
     pub drv0: i64,             // Space for future derived values.
     pub drv1: i64,             // Space for future derived values.
@@ -130,12 +112,6 @@ pub struct Price {
     pub comp: [PriceComp; 32], // Price components one per quoter.
 }
 
-#[cfg(target_endian = "little")]
-unsafe impl Zeroable for Price {}
-
-#[cfg(target_endian = "little")]
-unsafe impl Pod for Price {}
-
 impl Price {
     #[inline]
     pub fn load<'a>(price_feed: &'a AccountInfo) -> Result<RefMut<'a, Price>, ProgramError> {
@@ -149,44 +125,90 @@ impl Price {
     }
 }
 
-// pub const MARK_PRICE_PRECISION: u128 = 10_000_000_000; //expo = -10
-// https://github.com/drift-labs/protocol-v1/blob/082168ea63608ce21f4e0afa869431c94d2a6e11/programs/clearing_house/src/math/amm.rs#L222
+#[cfg(target_endian = "little")]
+unsafe impl Zeroable for Price {}
 
-pub fn get_pyth_price(
+#[cfg(target_endian = "little")]
+unsafe impl Pod for Price {}
+
+pub fn get_price(
     price_oracle: &AccountInfo,
     clock_slot: u64,
-    target_precision: u32,
-) -> Result<(i128, i128, u128, i64), ErrorCode> {
-    let price_account = Price::load(&price_oracle).unwrap();
+    target_precision: u32
+) -> Result<OraclePriceData, ErrorCode> {
+    msg!("Using Pyth");
+    
+    let price_data = Price::load(&price_oracle).unwrap();
 
-    let oracle_price = cast_to_i128(price_account.agg.price)?;
-    let oracle_conf = cast_to_u128(price_account.agg.conf)?;
-    let oracle_twap: i128 = cast_to_i128(price_account.twap)?.try_into().unwrap();
+    let oracle_price = cast_to_i128(price_data.agg.price)?;
+    let oracle_conf = cast_to_u128(price_data.agg.conf)?;
 
-    let orace_price_scaled: i128 = oracle_price
-        .checked_mul(10i128.pow(target_precision))
-        .unwrap()
-        .checked_div(10i128.pow((-price_account.expo).try_into().unwrap()))
-        .unwrap()
-        .try_into()
-        .unwrap();
+    let oracle_precision = 10_u128.pow(price_data.expo.unsigned_abs());
+    let target_precision_scaled = 10_u128.pow(target_precision);
 
-    let oracle_twap_scaled: i128 = (oracle_twap)
-        .checked_mul(10i128.pow(target_precision))
-        .unwrap()
-        .checked_div(10i128.pow((-price_account.expo).try_into().unwrap()))
-        .unwrap()
-        .try_into()
-        .unwrap();
+    let mut oracle_scale_mult = 1;
+    let mut oracle_scale_div = 1;
 
-    let oracle_delay: i64 = cast_to_i64(clock_slot)?
-        .checked_sub(cast(price_account.valid_slot)?)
+    if oracle_precision > target_precision_scaled {
+        oracle_scale_div = oracle_precision
+            .checked_div(target_precision_scaled)
+            .ok_or_else(math_error!())?;
+    } else {
+        oracle_scale_mult = target_precision_scaled
+            .checked_div(oracle_precision)
+            .ok_or_else(math_error!())?;
+    }
+
+    let oracle_price_scaled = (oracle_price)
+        .checked_mul(cast(oracle_scale_mult)?)
+        .ok_or_else(math_error!())?
+        .checked_div(cast(oracle_scale_div)?)
         .ok_or_else(math_error!())?;
 
-    Ok((
-        orace_price_scaled,
-        oracle_twap_scaled,
-        oracle_conf,
-        oracle_delay,
-    ))
+    let oracle_conf_scaled = (oracle_conf)
+        .checked_mul(oracle_scale_mult)
+        .ok_or_else(math_error!())?
+        .checked_div(oracle_scale_div)
+        .ok_or_else(math_error!())?;
+
+    let oracle_delay: i64 = cast_to_i64(clock_slot)?
+        .checked_sub(cast(price_data.valid_slot)?)
+        .ok_or_else(math_error!())?;
+
+    Ok(OraclePriceData {
+        price: oracle_price_scaled,
+        confidence: oracle_conf_scaled,
+        delay: oracle_delay,
+        has_sufficient_number_of_data_points: true,
+    })
+}
+
+pub fn get_twap(price_oracle: &AccountInfo, target_precision: u32) -> Result<i128, ErrorCode> {
+    let price_data = Price::load(&price_oracle).unwrap();
+
+    let oracle_twap = cast_to_i128(price_data.twap)?;
+
+    let oracle_precision = 10_u128.pow(price_data.expo.unsigned_abs());
+    let target_precision_scaled = 10_u128.pow(target_precision);
+
+    let mut oracle_scale_mult = 1;
+    let mut oracle_scale_div = 1;
+
+    if oracle_precision > target_precision_scaled {
+        oracle_scale_div = oracle_precision
+            .checked_div(target_precision_scaled)
+            .ok_or_else(math_error!())?;
+    } else {
+        oracle_scale_mult = target_precision_scaled
+            .checked_div(oracle_precision)
+            .ok_or_else(math_error!())?;
+    }
+
+    let oracle_twap_scaled = (oracle_twap)
+        .checked_mul(cast(oracle_scale_mult)?)
+        .ok_or_else(math_error!())?
+        .checked_div(cast(oracle_scale_div)?)
+        .ok_or_else(math_error!())?;
+
+    Ok(oracle_twap_scaled)
 }

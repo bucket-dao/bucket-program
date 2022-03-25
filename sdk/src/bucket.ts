@@ -671,7 +671,8 @@ export class BucketClient extends AccountUtils {
     collateral: PublicKey,
     issueAuthority: PublicKey,
     depositor: PublicKey | Keypair,
-    oracle: PublicKey
+    pyth_price_info: PublicKey,
+    switchboard_feed_info: PublicKey
   ) => {
     const signerInfo = getSignersFromPayer(depositor);
 
@@ -715,7 +716,8 @@ export class BucketClient extends AccountUtils {
         depositor: signerInfo.payer,
         depositorCollateral: depositorCollateralATA.address,
         depositorReserve: depositorReserveATA.address,
-        oracle: oracle,
+        pythPriceInfo: pyth_price_info,
+        switchboardFeedInfo: switchboard_feed_info,
       },
       preInstructions: flattenValidInstructions([
         depositorCollateralATA,

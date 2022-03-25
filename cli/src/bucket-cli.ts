@@ -220,7 +220,6 @@ programCommand("deposit")
 
     const _mint = new PublicKey(mint);
     const _collateral = new PublicKey(collateral);
-
     const walletKeyPair: Keypair = loadWalletKey(keypair);
     const _client = createClient(env, walletKeyPair);
 
@@ -229,26 +228,31 @@ programCommand("deposit")
     const { addr: iAuthority } = await _client.generateIssueAuthority(bucket);
 
     // using devnet usdc oracle for now
-    const oracle = new PublicKey(
-      // "5U3bH5b6XtG99aVWLqwVzYPVpQiFHytBD68Rz2eFPZd7"
-      // "C5wDxND9E61RZ1wZhaSTWkoA8udumaHnoQY6BBsiaVpn"
-      "38xoQ4oeJCBrcVvca2cGk7iV1dAfrmTR1kmhSCJQ8Jto"
+    const pyth_usdc_devnet = new PublicKey(
+      "5SSkXsEKQepHHAewytPVwdej4epN1nxgLVM84L4KXgy7"
+    );
+
+    // Switchboard USDC Devnet
+    const switchboard_usdc_devnet = new PublicKey(
+      "BjUgj6YCnFBZ49wF54ddBVA9qu8TeqkFtkbqmZcee8uW"
     );
 
     const amountU64 = new u64(amount);
-    await _client.deposit(
+    const transaction = await _client.deposit(
       amountU64,
       _mint,
       _collateral,
       iAuthority,
       walletKeyPair,
-      oracle
+      pyth_usdc_devnet,
+      switchboard_usdc_devnet
     );
 
     log.info("===========================================");
     log.info(
       `[${walletKeyPair.publicKey.toBase58()}] deposited ${amountU64.toNumber()} of collateral mint ${_collateral.toBase58()} to bucket ${bucket.toBase58()}`
     );
+    log.info(`TX: [${transaction}]`);
     log.info("===========================================");
   });
 

@@ -1,23 +1,17 @@
-import * as anchor from "@project-serum/anchor";
-import type {
+import {
   IExchange,
   Fees,
   InitializeSwapInstruction,
-} from "@saberhq/stableswap-sdk";
-import {
-  calculateVirtualPrice,
   deployNewSwap,
-  loadExchangeInfo,
-  parseEventLogs,
   StableSwap,
   SWAP_PROGRAM_ID,
   DEFAULT_FEE,
+  ISeedPoolAccountsFn,
 } from "@saberhq/stableswap-sdk";
 import {
   SPLToken,
   Token as SToken,
   TOKEN_PROGRAM_ID,
-  createInitMintInstructions,
   u64,
   Percent,
 } from "@saberhq/token-utils";
@@ -25,10 +19,7 @@ import {
   Account,
   PublicKey,
   Signer,
-  TransactionResponse,
   TransactionSignature,
-} from "@solana/web3.js";
-import {
   Connection,
   Keypair,
   LAMPORTS_PER_SOL,
@@ -38,11 +29,8 @@ import {
 import {
   SignerWallet,
   Provider,
-  SolanaProvider,
 } from "@saberhq/solana-contrib";
-import { Saber } from "@saberhq/saber-periphery";
 
-import type { ISeedPoolAccountsFn } from "@saberhq/stableswap-sdk";
 import { assertKeysEqual } from "../../common/util";
 import { expect } from "chai";
 

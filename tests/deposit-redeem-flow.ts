@@ -5,10 +5,10 @@ import { expect } from "chai";
 import {
   expectThrowsAsync,
   TokenBalance,
-  isApproximatelyEqual,
+  isApproximatelyEqual
 } from "./common/util";
-import { mockOracle } from "./helpers/pyth";
 import { BucketClient, executeTx, NodeWallet } from "../sdk/dist/cjs";
+import { mockOracle } from "./helpers/pyth";
 
 describe("deposit-redeem-flow", () => {
   const _provider = anchor.Provider.env();
@@ -35,6 +35,16 @@ describe("deposit-redeem-flow", () => {
   let collateralC: Keypair;
 
   let userA: Keypair;
+
+  // Devnet Pyth USDC: "5SSkXsEKQepHHAewytPVwdej4epN1nxgLVM84L4KXgy7"
+  let pythOracle: PublicKey;
+  // Devnet Switchboard USDC: "BjUgj6YCnFBZ49wF54ddBVA9qu8TeqkFtkbqmZcee8uW"
+  let switchboardOracle: PublicKey;
+
+  before("Create Oracles", async () => {
+    pythOracle = await mockOracle(1);
+    switchboardOracle = await mockOracle(1);
+  });
 
   before("Create funded user accounts", async () => {
     authority = await nodeWallet.createFundedWallet(10 * LAMPORTS_PER_SOL);
@@ -129,7 +139,6 @@ describe("deposit-redeem-flow", () => {
   });
 
   it("User attempts to deposit unauthorized collateral", async () => {
-    const oracle = await mockOracle(1);
     const depositAmount = new u64(1_000_000);
     expectThrowsAsync(() =>
       client.deposit(
@@ -138,7 +147,8 @@ describe("deposit-redeem-flow", () => {
         collateralA.publicKey,
         issueAuthority,
         userA,
-        oracle
+        pythOracle,
+        switchboardOracle
       )
     );
   });
@@ -218,8 +228,6 @@ describe("deposit-redeem-flow", () => {
     // mint collateral and fund depositor ATA with collateral
     const depositAmount = new u64(1_000_000);
 
-    const oracle = await mockOracle(1);
-
     // fetch depositor ATA balance before deposit
     const depositorCollateralBefore = await client.fetchTokenBalance(
       collateralA.publicKey,
@@ -234,7 +242,8 @@ describe("deposit-redeem-flow", () => {
       collateralA.publicKey,
       issueAuthority,
       userA,
-      oracle
+      pythOracle,
+      switchboardOracle
     );
 
     // fetch depositor & crate ATA balances after deposit
@@ -262,7 +271,6 @@ describe("deposit-redeem-flow", () => {
   it("User B, C deposits authorized collateral B, C, issue reserve tokens", async () => {
     // mint collateral and fund depositor ATA with collateral
     const depositAmount = new u64(1_000_000);
-    const oracle = await mockOracle(1);
 
     // ==================================================================
     // collateral B checks & rpc call
@@ -287,7 +295,8 @@ describe("deposit-redeem-flow", () => {
       collateralB.publicKey,
       issueAuthority,
       userA,
-      oracle
+      pythOracle,
+      switchboardOracle
     );
 
     // fetch user B & crate ATA balances for collateral B after deposit
@@ -331,7 +340,8 @@ describe("deposit-redeem-flow", () => {
       collateralC.publicKey,
       issueAuthority,
       userA,
-      oracle
+      pythOracle,
+      switchboardOracle
     );
 
     // fetch user B & crate ATA balances for collateral B after deposit

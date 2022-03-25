@@ -10,7 +10,7 @@ pub const ISSUE_SEED: &str = "issue";
 pub const WITHDRAW_SEED: &str = "withdraw";
 pub const TARGET_ORACLE_PRECISION: u32 = 6;
 pub const MAX_ORACLE_CONF: u128 = 100_000;
-pub const SLOTS_BEFORE_STALE: i64 = 60;
+pub const SLOTS_BEFORE_STALE: i64 = 1000;
 
 /// (todo): store in config somewhere else? or accept dynamic percentage,
 /// while making sure that max slippage stays under some predefined threshold?
